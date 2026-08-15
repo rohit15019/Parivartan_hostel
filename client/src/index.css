@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #09090b;
+    
+    --card: #ffffff;
+    --card-foreground: #09090b;
+    
+    --border: #e4e4e7;
+    --input: #e4e4e7;
+    --ring: #3b82f6;
+  }
+
+  .dark {
+    --background: #000000;
+    --foreground: #fafafa;
+    
+    --card: #09090b;
+    --card-foreground: #fafafa;
+    
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #3b82f6;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Utilities for Glassmorphism */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm dark:bg-black/50 dark:border-white/10;
+}
