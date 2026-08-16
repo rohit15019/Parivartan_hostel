@@ -38,6 +38,9 @@ const PaymentHistory = () => {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const paymentsPerPage = 5;
+
   const filteredPayments = payments.filter((payment) => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -53,6 +56,24 @@ const PaymentHistory = () => {
       method.includes(searchLower)
     );
   });
+
+  const indexOfLastPayment = currentPage * paymentsPerPage;
+  const indexOfFirstPayment = indexOfLastPayment - paymentsPerPage;
+  const currentPayments = filteredPayments.slice(indexOfFirstPayment, indexOfLastPayment);
+  const totalPages = Math.ceil(filteredPayments.length / paymentsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  // Reset to page 1 when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -91,10 +112,10 @@ const PaymentHistory = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" className="p-4 text-center">Loading payment history...</td></tr>
-              ) : filteredPayments.length === 0 ? (
-                <tr><td colSpan="6" className="p-4 text-center">No payment records found.</td></tr>
-              ) : filteredPayments.map((payment, idx) => (
+                <tr><td colSpan="7" className="p-4 text-center">Loading payment history...</td></tr>
+              ) : currentPayments.length === 0 ? (
+                <tr><td colSpan="7" className="p-4 text-center">No payment records found.</td></tr>
+              ) : currentPayments.map((payment, idx) => (
                 <motion.tr 
                   key={payment._id || idx} 
                   initial={{ opacity: 0, y: 10 }}
@@ -141,6 +162,20 @@ const PaymentHistory = () => {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
+            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <span className="text-sm text-black/60 dark:text-white/60">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+              Next
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   );
