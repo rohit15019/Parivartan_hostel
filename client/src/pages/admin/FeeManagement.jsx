@@ -24,6 +24,9 @@ const FeeManagement = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const paymentsPerPage = 5;
+
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     paymentDate: new Date().toISOString().split('T')[0],
@@ -54,6 +57,7 @@ const FeeManagement = () => {
       const { data } = await api.get(`/fees/${id}`);
       setFeeData(data.fee);
       setPayments(data.payments || []);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Failed to fetch fee details:', error);
     } finally {
@@ -118,6 +122,20 @@ const FeeManagement = () => {
     if (feeData.paidAmount >= feeData.totalFees && feeData.totalFees > 0) currentStatus = 'FULLY PAID';
     else if (feeData.paidAmount > 0) currentStatus = 'PARTIALLY PAID';
   }
+
+  // Pagination logic
+  const indexOfLastPayment = currentPage * paymentsPerPage;
+  const indexOfFirstPayment = indexOfLastPayment - paymentsPerPage;
+  const currentPayments = payments.slice(indexOfFirstPayment, indexOfLastPayment);
+  const totalPages = Math.ceil(payments.length / paymentsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
   return (
     <div className="space-y-6">
@@ -306,25 +324,40 @@ const FeeManagement = () => {
                     {payments.length === 0 ? (
                       <p className="text-sm text-black/50 dark:text-white/50 text-center py-4">No payments yet.</p>
                     ) : (
-                      <div className="relative border-l-2 border-primary-100 dark:border-primary-900/50 ml-3 space-y-6 pb-4">
-                        {payments.map((payment) => (
-                          <div key={payment._id} className="relative pl-6">
-                            {/* Timeline Dot */}
-                            <span className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-primary-500 ring-4 ring-card"></span>
-                            
-                            <div className="flex flex-col gap-1">
-                              <span className="text-xs font-semibold text-black/50 dark:text-white/50">
-                                {new Date(payment.paymentDate).toLocaleDateString()}
-                              </span>
-                              <span className="text-base font-bold text-green-600 dark:text-green-400">₹{payment.amount.toLocaleString()}</span>
-                              <div className="flex flex-col gap-0.5 text-xs text-black/60 dark:text-white/60 mt-1">
-                                <span className="flex items-center gap-1"><CreditCard className="w-3 h-3"/> {payment.paymentMethod}</span>
-                                {payment.transactionId && <span className="flex items-center gap-1"><FileText className="w-3 h-3"/> {payment.transactionId}</span>}
+                      <>
+                        <div className="relative border-l-2 border-primary-100 dark:border-primary-900/50 ml-3 space-y-6 pb-4">
+                          {currentPayments.map((payment) => (
+                            <div key={payment._id} className="relative pl-6">
+                              {/* Timeline Dot */}
+                              <span className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-primary-500 ring-4 ring-card"></span>
+                              
+                              <div className="flex flex-col gap-1">
+                                <span className="text-xs font-semibold text-black/50 dark:text-white/50">
+                                  {new Date(payment.paymentDate).toLocaleDateString()}
+                                </span>
+                                <span className="text-base font-bold text-green-600 dark:text-green-400">₹{payment.amount.toLocaleString()}</span>
+                                <div className="flex flex-col gap-0.5 text-xs text-black/60 dark:text-white/60 mt-1">
+                                  <span className="flex items-center gap-1"><CreditCard className="w-3 h-3"/> {payment.paymentMethod}</span>
+                                  {payment.transactionId && <span className="flex items-center gap-1"><FileText className="w-3 h-3"/> {payment.transactionId}</span>}
+                                </div>
                               </div>
                             </div>
+                          ))}
+                        </div>
+                        {totalPages > 1 && (
+                          <div className="flex justify-between items-center mt-4 pt-4 border-t border-border">
+                            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                              Previous
+                            </Button>
+                            <span className="text-xs text-black/60 dark:text-white/60">
+                              Page {currentPage} of {totalPages}
+                            </span>
+                            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                              Next
+                            </Button>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>
