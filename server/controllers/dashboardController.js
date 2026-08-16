@@ -36,16 +36,8 @@ const getAdminDashboardStats = async (req, res) => {
       .sort({ paymentDate: -1 })
       .limit(5);
 
-    // Fee Collection Overview - Last 6 Months
-    const today = new Date();
-    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-
+    // Fee Collection Overview - Group by Year and Month
     const monthlyPayments = await Payment.aggregate([
-      {
-        $match: {
-          paymentDate: { $gte: sixMonthsAgo }
-        }
-      },
       {
         $group: {
           _id: {
@@ -54,23 +46,30 @@ const getAdminDashboardStats = async (req, res) => {
           },
           totalAmount: { $sum: "$amount" }
         }
+      },
+      {
+        $sort: { "_id.year": 1, "_id.month": 1 }
       }
     ]);
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    let feeGraphData = [];
+    let yearlyGraphData = {};
     
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1; // 1-12
+    monthlyPayments.forEach(p => {
+      const year = p._id.year;
+      const monthIndex = p._id.month - 1;
       
-      const found = monthlyPayments.find(p => p._id.year === year && p._id.month === month);
+      if (!yearlyGraphData[year]) {
+        yearlyGraphData[year] = monthNames.map(name => ({ month: name, amount: 0 }));
+      }
       
-      feeGraphData.push({
-        month: monthNames[d.getMonth()],
-        amount: found ? found.totalAmount : 0
-      });
+      yearlyGraphData[year][monthIndex].amount = p.totalAmount;
+    });
+
+    // If no payments exist, fallback to current year
+    if (Object.keys(yearlyGraphData).length === 0) {
+      const currentYear = new Date().getFullYear();
+      yearlyGraphData[currentYear] = monthNames.map(name => ({ month: name, amount: 0 }));
     }
 
     res.json({
@@ -85,7 +84,7 @@ const getAdminDashboardStats = async (req, res) => {
         pendingReports
       },
       recentPayments,
-      feeGraphData
+      yearlyGraphData
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

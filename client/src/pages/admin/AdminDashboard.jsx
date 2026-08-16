@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, IndianRupee, Clock, CalendarDays, TrendingUp, UserMinus, FileText } from 'lucide-react';
 import api from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const StatCard = ({ title, value, icon: Icon, subtitle, trend, colorClass, onClick }) => (
   <Card 
@@ -38,7 +39,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState(null);
   const [recentPayments, setRecentPayments] = useState([]);
-  const [feeGraphData, setFeeGraphData] = useState([]);
+  const [yearlyGraphData, setYearlyGraphData] = useState({});
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -56,7 +58,15 @@ const AdminDashboard = () => {
           status: payment.paymentMethod
         }));
         setRecentPayments(formattedPayments);
-        setFeeGraphData(data.feeGraphData || []);
+        
+        const graphData = data.yearlyGraphData || {};
+        setYearlyGraphData(graphData);
+        
+        // Select the most recent year by default
+        const years = Object.keys(graphData).sort((a, b) => b - a);
+        if (years.length > 0) {
+          setSelectedYear(years[0]);
+        }
       } catch (error) {
         console.error('Failed to fetch admin dashboard stats:', error);
       } finally {
@@ -99,36 +109,59 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 animate-slide-up" style={{ animationDelay: '500ms' }}>
           <Card className="h-full flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between items-center pb-2">
               <CardTitle>Fee Collection Overview</CardTitle>
+              {Object.keys(yearlyGraphData).length > 0 && (
+                <select 
+                  className="bg-black/5 dark:bg-white/5 border-none text-sm font-medium rounded-lg p-2 focus:ring-2 focus:ring-primary-500"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                >
+                  {Object.keys(yearlyGraphData).sort((a, b) => b - a).map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              )}
             </CardHeader>
             <CardContent className="flex-1 flex flex-col pb-6">
-              {/* Animated CSS Bar Chart */}
-              <div className="flex-1 w-full mt-4 flex items-end justify-between gap-2 sm:gap-4 px-2">
-                {feeGraphData.map((data, index) => {
-                  const maxFeeAmount = feeGraphData.length > 0 ? Math.max(...feeGraphData.map(d => d.amount)) : 0;
-                  const heightPercent = maxFeeAmount > 0 ? Math.round((data.amount / maxFeeAmount) * 100) : 0;
-                  // Set a minimum height for visibility if there is some amount
-                  const finalHeight = data.amount > 0 ? Math.max(heightPercent, 5) : 0;
-                  
-                  return (
-                    <div key={index} className="flex flex-col items-center gap-3 flex-1 group">
-                      <div className="w-full bg-black/5 dark:bg-white/5 rounded-t-lg relative flex items-end justify-center h-48 sm:h-56">
-                        <motion.div 
-                          initial={{ height: 0 }}
-                          animate={{ height: `${finalHeight}%` }}
-                          transition={{ duration: 0.8, delay: 0.6 + (index * 0.1), ease: "easeOut" }}
-                          className="w-full max-w-[48px] bg-primary-500 dark:bg-primary-600 rounded-t-lg transition-colors duration-300 group-hover:bg-primary-600 dark:group-hover:bg-primary-500 relative"
-                        >
-                          <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black text-xs py-1 px-2 rounded font-medium transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                            ₹{data.amount.toLocaleString()}
-                          </div>
-                        </motion.div>
-                      </div>
-                      <span className="text-xs sm:text-sm font-medium text-black/50 dark:text-white/50">{data.month}</span>
-                    </div>
-                  );
-                })}
+              <div className="flex-1 w-full mt-4 h-64 min-h-[250px]">
+                {yearlyGraphData[selectedYear] ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={yearlyGraphData[selectedYear]} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-black/10 dark:text-white/10" />
+                      <XAxis 
+                        dataKey="month" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'currentColor', opacity: 0.5, fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'currentColor', opacity: 0.5, fontSize: 12 }}
+                        tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000) + 'k' : value}`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value) => [`₹${value.toLocaleString()}`, 'Amount']}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="amount" 
+                        stroke="#0ea5e9" 
+                        strokeWidth={3}
+                        dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                        activeDot={{ r: 6, fill: '#0ea5e9', stroke: '#fff', strokeWidth: 2 }}
+                        animationDuration={1500}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-black/50 dark:text-white/50">
+                    No data available for this year
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
