@@ -68,7 +68,7 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
 
       {/* Sidebar */}
       <motion.aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 border-r transform transition-all duration-300 lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col ${currentColor.classes}`}
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-[80%] sm:w-[300px] lg:w-[20%] lg:min-w-[250px] lg:max-w-[300px] xl:w-[15%] border-r transform transition-all duration-300 lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col ${currentColor.classes}`}
       >
         <div className="h-16 flex items-center gap-3 px-6 border-b border-white/10 dark:border-white/10">
           <div className={`p-2 rounded-lg ${currentColor.iconClass}`}>
