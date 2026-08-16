@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Check, X, Clock } from 'lucide-react';
+import { CalendarDays, Check, X, Clock, Trash2 } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../components/ui/Card';
@@ -48,16 +48,22 @@ const LeaveRequests = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this leave request?')) {
+      try {
+        await api.delete(`/leaves/${id}`);
+        setRequests(requests.filter(req => req.id !== id));
+      } catch (error) {
+        console.error('Failed to delete leave request:', error);
+        alert(error.response?.data?.message || 'Failed to delete leave request');
+      }
+    }
+  };
+
   const filteredRequests = requests.filter(req => req.status === filter);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leave Requests</h1>
-          <p className="text-black/60 dark:text-white/60">Review and manage student leave applications.</p>
-        </div>
-      </div>
 
       <div className="flex space-x-2 p-1 bg-black/5 dark:bg-white/5 rounded-lg w-full max-w-md">
         {['PENDING', 'APPROVED', 'DENIED'].map((f) => (
@@ -90,9 +96,18 @@ const LeaveRequests = () => {
                       <p className="text-sm text-black/50 dark:text-white/50">Room {request.room}</p>
                     </div>
                   </div>
-                  {request.status === 'PENDING' && <Badge variant="warning">🟡 PENDING</Badge>}
-                  {request.status === 'APPROVED' && <Badge variant="success">🟢 APPROVED</Badge>}
-                  {request.status === 'DENIED' && <Badge variant="danger">🔴 DENIED</Badge>}
+                  <div className="flex items-center gap-2">
+                    {request.status === 'PENDING' && <Badge variant="warning">🟡 PENDING</Badge>}
+                    {request.status === 'APPROVED' && <Badge variant="success">🟢 APPROVED</Badge>}
+                    {request.status === 'DENIED' && <Badge variant="danger">🔴 DENIED</Badge>}
+                    <button
+                      onClick={() => handleDelete(request.id)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                      title="Delete Request"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
