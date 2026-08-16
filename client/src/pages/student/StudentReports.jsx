@@ -13,6 +13,9 @@ const StudentReports = () => {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const reportsPerPage = 3;
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -49,6 +52,19 @@ const StudentReports = () => {
       case 'Rejected': return <Badge variant="danger"><XCircle className="w-3 h-3 mr-1" /> Rejected</Badge>;
       default: return null;
     }
+  };
+
+  const indexOfLastReport = currentPage * reportsPerPage;
+  const indexOfFirstReport = indexOfLastReport - reportsPerPage;
+  const currentReports = reports.slice(indexOfFirstReport, indexOfLastReport);
+  const totalPages = Math.ceil(reports.length / reportsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
   return (
@@ -107,7 +123,8 @@ const StudentReports = () => {
             </CardContent>
           </Card>
         ) : (
-          reports.map((report) => (
+          <>
+            {currentReports.map((report) => (
             <Card key={report._id}>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -130,7 +147,20 @@ const StudentReports = () => {
                 )}
               </CardContent>
             </Card>
-          ))
+          ))}
+
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <span className="text-sm">Page {currentPage} of {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

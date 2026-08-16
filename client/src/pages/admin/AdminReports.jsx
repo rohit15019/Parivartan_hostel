@@ -14,6 +14,9 @@ const AdminReports = () => {
   const [status, setStatus] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const reportsPerPage = 3;
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -55,6 +58,24 @@ const AdminReports = () => {
     r.studentId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const indexOfLastReport = currentPage * reportsPerPage;
+  const indexOfFirstReport = indexOfLastReport - reportsPerPage;
+  const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
+  const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  // Reset page to 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -85,32 +106,46 @@ const AdminReports = () => {
                </CardContent>
              </Card>
           ) : (
-            filteredReports.map((report) => (
-              <Card 
-                key={report._id} 
-                className={`cursor-pointer transition-colors ${selectedReport?._id === report._id ? 'border-primary-500 ring-1 ring-primary-500' : 'hover:border-primary-300'}`}
-                onClick={() => {
-                  setSelectedReport(report);
-                  setStatus(report.status);
-                  setAdminNotes(report.adminNotes || '');
-                }}
-              >
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg">{report.title}</h3>
-                    {getStatusBadge(report.status)}
-                  </div>
-                  <div className="text-sm text-black/60 dark:text-white/60 mb-4 flex flex-wrap gap-x-4 gap-y-2">
-                    <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
-                    <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
-                    <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-sm line-clamp-2 bg-black/5 dark:bg-white/5 p-3 rounded-lg">
-                    {report.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))
+            <>
+              {currentReports.map((report) => (
+                <Card 
+                  key={report._id} 
+                  className={`cursor-pointer transition-colors ${selectedReport?._id === report._id ? 'border-primary-500 ring-1 ring-primary-500' : 'hover:border-primary-300'}`}
+                  onClick={() => {
+                    setSelectedReport(report);
+                    setStatus(report.status);
+                    setAdminNotes(report.adminNotes || '');
+                  }}
+                >
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg">{report.title}</h3>
+                      {getStatusBadge(report.status)}
+                    </div>
+                    <div className="text-sm text-black/60 dark:text-white/60 mb-4 flex flex-wrap gap-x-4 gap-y-2">
+                      <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
+                      <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
+                      <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm line-clamp-2 bg-black/5 dark:bg-white/5 p-3 rounded-lg">
+                      {report.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">
+                  <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm">Page {currentPage} of {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
