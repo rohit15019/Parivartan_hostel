@@ -117,17 +117,17 @@ const AdminReports = () => {
                     setAdminNotes(report.adminNotes || '');
                   }}
                 >
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{report.title}</h3>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-semibold text-base">{report.title}</h3>
                       {getStatusBadge(report.status)}
                     </div>
-                    <div className="text-sm text-black/60 dark:text-white/60 mb-4 flex flex-wrap gap-x-4 gap-y-2">
+                    <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-wrap gap-x-3 gap-y-1">
                       <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
                       <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
                       <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-sm line-clamp-2 bg-black/5 dark:bg-white/5 p-3 rounded-lg">
+                    <p className="text-sm line-clamp-1 bg-black/5 dark:bg-white/5 p-2 rounded-md">
                       {report.description}
                     </p>
                   </CardContent>

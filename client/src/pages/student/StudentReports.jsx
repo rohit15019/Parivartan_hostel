@@ -126,23 +126,23 @@ const StudentReports = () => {
           <>
             {currentReports.map((report) => (
             <Card key={report._id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-semibold text-lg">{report.title}</h3>
-                    <p className="text-sm text-black/60 dark:text-white/60">
+                    <h3 className="font-semibold text-base">{report.title}</h3>
+                    <p className="text-xs text-black/60 dark:text-white/60">
                       Submitted on {new Date(report.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   {getStatusBadge(report.status)}
                 </div>
-                <p className="text-sm bg-black/5 dark:bg-white/5 p-4 rounded-lg mb-4 whitespace-pre-wrap">
+                <p className="text-sm bg-black/5 dark:bg-white/5 p-2 rounded-md mb-2 line-clamp-2">
                   {report.description}
                 </p>
                 {report.adminNotes && (
-                  <div className="mt-4 border-l-2 border-primary-500 pl-4">
-                    <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">Admin Response:</p>
-                    <p className="text-sm">{report.adminNotes}</p>
+                  <div className="mt-2 border-l-2 border-primary-500 pl-3">
+                    <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">Admin Response:</p>
+                    <p className="text-sm line-clamp-2">{report.adminNotes}</p>
                   </div>
                 )}
               </CardContent>
