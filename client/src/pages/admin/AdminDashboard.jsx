@@ -70,7 +70,7 @@ const AdminDashboard = () => {
   const stats = [
     { title: "Total Students", value: statsData?.totalStudents || 0, icon: Users, colorClass: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400", path: "/admin/students" },
     { title: "Fees Collected", value: `₹${(statsData?.totalFeesCollected || 0).toLocaleString()}`, icon: IndianRupee, subtitle: "Total Received", colorClass: "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400", path: "/admin/history" },
-    { title: "Pending", value: statsData?.pendingCount || 0, icon: UserMinus, subtitle: "Students", colorClass: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400" },
+    { title: "Pending Reports", value: statsData?.pendingReports || 0, icon: FileText, subtitle: "Unresolved", colorClass: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400", path: "/admin/reports" },
     { title: "Leave Requests", value: statsData?.pendingLeaves || 0, icon: CalendarDays, subtitle: "Pending Approval", colorClass: "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400", path: "/admin/leaves" },
   ];
 

@@ -28,6 +28,8 @@ const getAdminDashboardStats = async (req, res) => {
     });
 
     const pendingLeaves = await LeaveRequest.countDocuments({ status: 'PENDING' });
+    const Report = require('../models/Report');
+    const pendingReports = await Report.countDocuments({ status: 'Pending' });
 
     const recentPayments = await Payment.find({})
       .populate('studentId', 'name roomNumber')
@@ -79,7 +81,8 @@ const getAdminDashboardStats = async (req, res) => {
         fullyPaidCount,
         halfPaidCount,
         pendingCount,
-        pendingLeaves
+        pendingLeaves,
+        pendingReports
       },
       recentPayments,
       feeGraphData
