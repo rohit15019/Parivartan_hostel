@@ -14,7 +14,7 @@ const StudentReports = () => {
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const reportsPerPage = 3;
+  const reportsPerPage = 4;
 
   useEffect(() => {
     fetchReports();
@@ -124,30 +124,34 @@ const StudentReports = () => {
           </Card>
         ) : (
           <>
-            {currentReports.map((report) => (
-            <Card key={report._id}>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold text-base">{report.title}</h3>
-                    <p className="text-xs text-black/60 dark:text-white/60">
-                      Submitted on {new Date(report.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {getStatusBadge(report.status)}
-                </div>
-                <p className="text-sm bg-black/5 dark:bg-white/5 p-2 rounded-md mb-2 line-clamp-2">
-                  {report.description}
-                </p>
-                {report.adminNotes && (
-                  <div className="mt-2 border-l-2 border-primary-500 pl-3">
-                    <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">Admin Response:</p>
-                    <p className="text-sm line-clamp-2">{report.adminNotes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {currentReports.map((report) => (
+                <Card key={report._id} className="aspect-square flex flex-col justify-between">
+                  <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-base line-clamp-1">{report.title}</h3>
+                        <p className="text-xs text-black/60 dark:text-white/60">
+                          Submitted on {new Date(report.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {getStatusBadge(report.status)}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm bg-black/5 dark:bg-white/5 p-2 rounded-md mb-2 line-clamp-3 h-full">
+                        {report.description}
+                      </p>
+                    </div>
+                    {report.adminNotes && (
+                      <div className="mt-2 border-l-2 border-primary-500 pl-3">
+                        <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">Admin Response:</p>
+                        <p className="text-sm line-clamp-2">{report.adminNotes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">

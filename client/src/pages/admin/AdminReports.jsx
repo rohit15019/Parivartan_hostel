@@ -15,7 +15,7 @@ const AdminReports = () => {
   const [adminNotes, setAdminNotes] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const reportsPerPage = 3;
+  const reportsPerPage = 4;
 
   useEffect(() => {
     fetchReports();
@@ -107,32 +107,36 @@ const AdminReports = () => {
              </Card>
           ) : (
             <>
-              {currentReports.map((report) => (
-                <Card 
-                  key={report._id} 
-                  className={`cursor-pointer transition-colors ${selectedReport?._id === report._id ? 'border-primary-500 ring-1 ring-primary-500' : 'hover:border-primary-300'}`}
-                  onClick={() => {
-                    setSelectedReport(report);
-                    setStatus(report.status);
-                    setAdminNotes(report.adminNotes || '');
-                  }}
-                >
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-semibold text-base">{report.title}</h3>
-                      {getStatusBadge(report.status)}
-                    </div>
-                    <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-wrap gap-x-3 gap-y-1">
-                      <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
-                      <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
-                      <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-sm line-clamp-1 bg-black/5 dark:bg-white/5 p-2 rounded-md">
-                      {report.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentReports.map((report) => (
+                  <Card 
+                    key={report._id} 
+                    className={`cursor-pointer transition-colors aspect-square flex flex-col justify-between ${selectedReport?._id === report._id ? 'border-primary-500 ring-1 ring-primary-500' : 'hover:border-primary-300'}`}
+                    onClick={() => {
+                      setSelectedReport(report);
+                      setStatus(report.status);
+                      setAdminNotes(report.adminNotes || '');
+                    }}
+                  >
+                    <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-semibold text-base line-clamp-1">{report.title}</h3>
+                        {getStatusBadge(report.status)}
+                      </div>
+                      <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-col gap-y-1">
+                        <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
+                        <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
+                        <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex-1 overflow-hidden mt-auto">
+                        <p className="text-sm line-clamp-3 bg-black/5 dark:bg-white/5 p-2 rounded-md h-full">
+                          {report.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
               {totalPages > 1 && (
                 <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">
@@ -153,10 +157,20 @@ const AdminReports = () => {
           {selectedReport ? (
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>Update Report</CardTitle>
+                <CardTitle>Report Details</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg mb-1">{selectedReport.title}</h3>
+                  <div className="text-sm text-black/60 dark:text-white/60 flex gap-x-4 mb-2">
+                    <span>{selectedReport.studentId?.name}</span>
+                    <span>Room: {selectedReport.studentId?.roomNumber}</span>
+                  </div>
+                  <p className="text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap max-h-40 overflow-y-auto">
+                    {selectedReport.description}
+                  </p>
+                </div>
+                <form onSubmit={handleUpdate} className="space-y-4 border-t pt-4 border-border">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Status</label>
                     <select
