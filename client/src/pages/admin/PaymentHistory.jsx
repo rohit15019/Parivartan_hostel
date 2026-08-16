@@ -77,13 +77,6 @@ const PaymentHistory = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Payment History</h1>
-          <p className="text-black/60 dark:text-white/60">View and track all fee payments across the hostel.</p>
-        </div>
-      </div>
-
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
           <div className="relative w-full md:w-96">
