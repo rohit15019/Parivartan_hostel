@@ -5,6 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
+const AshokaChakra = () => (
+  <svg viewBox="0 0 100 100" className="w-6 h-6 text-[#000080] animate-[spin_10s_linear_infinite]">
+    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4"/>
+    <circle cx="50" cy="50" r="8" fill="currentColor"/>
+    {[...Array(24)].map((_, i) => (
+      <line key={i} x1="50" y1="50" x2="50" y2="5" stroke="currentColor" strokeWidth="1.5" transform={`rotate(${i * 15} 50 50)`}/>
+    ))}
+  </svg>
+);
+
 const SIDEBAR_COLORS = [
   { name: 'Default', classes: 'bg-card border-border text-foreground', iconClass: 'bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400', linkClass: 'text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground', activeLinkClass: 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' },
   { name: 'Blue', classes: 'bg-blue-600 border-blue-700 text-white', iconClass: 'bg-white/20 text-white', linkClass: 'text-white/70 hover:bg-white/10 hover:text-white', activeLinkClass: 'bg-white/20 text-white font-semibold' },
@@ -12,7 +22,15 @@ const SIDEBAR_COLORS = [
   { name: 'Dark', classes: 'bg-slate-900 border-slate-800 text-white', iconClass: 'bg-white/10 text-white', linkClass: 'text-white/70 hover:bg-white/5 hover:text-white', activeLinkClass: 'bg-primary-600 text-white font-semibold' },
   { name: 'Red', classes: 'bg-red-600 border-red-700 text-white', iconClass: 'bg-white/20 text-white', linkClass: 'text-white/70 hover:bg-white/10 hover:text-white', activeLinkClass: 'bg-white/20 text-white font-semibold' },
   { name: 'Yellow', classes: 'bg-yellow-500 border-yellow-600 text-white', iconClass: 'bg-black/10 text-white', linkClass: 'text-white/80 hover:bg-black/10 hover:text-white', activeLinkClass: 'bg-black/20 text-white font-semibold' },
-  { name: 'Green', classes: 'bg-emerald-600 border-emerald-700 text-white', iconClass: 'bg-white/20 text-white', linkClass: 'text-white/70 hover:bg-white/10 hover:text-white', activeLinkClass: 'bg-white/20 text-white font-semibold' }
+  { name: 'Green', classes: 'bg-emerald-600 border-emerald-700 text-white', iconClass: 'bg-white/20 text-white', linkClass: 'text-white/70 hover:bg-white/10 hover:text-white', activeLinkClass: 'bg-white/20 text-white font-semibold' },
+  { 
+    name: 'India', 
+    classes: 'bg-gradient-to-b from-[#FF9933] via-white to-[#138808] border-gray-300 text-black', 
+    iconClass: 'bg-[#000080]/10 text-[#000080]', 
+    linkClass: 'text-black/70 hover:bg-black/10 hover:text-black font-medium', 
+    activeLinkClass: 'bg-[#000080]/10 text-[#000080] font-bold shadow-sm backdrop-blur-sm',
+    isIndia: true
+  }
 ];
 
 const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
@@ -54,7 +72,7 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
       >
         <div className="h-16 flex items-center gap-3 px-6 border-b border-white/10 dark:border-white/10">
           <div className={`p-2 rounded-lg ${currentColor.iconClass}`}>
-            <Building2 className="w-6 h-6" />
+            {currentColor.isIndia ? <AshokaChakra /> : <Building2 className="w-6 h-6" />}
           </div>
           <span className="font-bold text-xl tracking-tight">Parivartan</span>
         </div>
