@@ -13,12 +13,14 @@ import FeeManagement from './pages/admin/FeeManagement';
 import PaymentHistory from './pages/admin/PaymentHistory';
 import LeaveRequests from './pages/admin/LeaveRequests';
 import RoomsManagement from './pages/admin/RoomsManagement';
+import AdminReports from './pages/admin/AdminReports';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentProfile from './pages/student/StudentProfile';
 import StudentLeaveRequest from './pages/student/StudentLeaveRequest';
 import StudentFees from './pages/student/StudentFees';
+import StudentReports from './pages/student/StudentReports';
 
 const adminMenu = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,6 +37,7 @@ const studentMenu = [
   { path: '/student/profile', label: 'My Profile', icon: UserIcon },
   { path: '/student/fees', label: 'My Fees', icon: IndianRupee },
   { path: '/student/leaves', label: 'Leave Request', icon: CalendarDays },
+  { path: '/student/reports', label: 'Reports', icon: FileText },
 ];
 
 function App() {
@@ -54,7 +57,7 @@ function App() {
             <Route path="/admin/history" element={<PaymentHistory />} />
             <Route path="/admin/leaves" element={<LeaveRequests />} />
             <Route path="/admin/rooms" element={<RoomsManagement />} />
-            <Route path="/admin/reports" element={<div className="p-8">Reports - Coming Soon</div>} />
+            <Route path="/admin/reports" element={<AdminReports />} />
           </Route>
 
           {/* Student Routes */}
@@ -63,6 +66,7 @@ function App() {
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/student/fees" element={<StudentFees />} />
             <Route path="/student/leaves" element={<StudentLeaveRequest />} />
+            <Route path="/student/reports" element={<StudentReports />} />
           </Route>
           </Routes>
         </Router>
