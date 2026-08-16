@@ -11,6 +11,7 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const profileRequestRoutes = require('./routes/profileRequestRoutes');
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/profile-requests', profileRequestRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

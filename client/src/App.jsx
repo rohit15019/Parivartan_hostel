@@ -14,6 +14,7 @@ import PaymentHistory from './pages/admin/PaymentHistory';
 import LeaveRequests from './pages/admin/LeaveRequests';
 import RoomsManagement from './pages/admin/RoomsManagement';
 import AdminReports from './pages/admin/AdminReports';
+import ProfileRequests from './pages/admin/ProfileRequests';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -30,6 +31,7 @@ const adminMenu = [
   { path: '/admin/leaves', label: 'Leave Requests', icon: CalendarDays },
   { path: '/admin/rooms', label: 'Rooms', icon: BedDouble },
   { path: '/admin/reports', label: 'Reports', icon: FileText },
+  { path: '/admin/profile-requests', label: 'Change Requests', icon: Settings },
 ];
 
 const studentMenu = [
@@ -58,6 +60,7 @@ function App() {
             <Route path="/admin/leaves" element={<LeaveRequests />} />
             <Route path="/admin/rooms" element={<RoomsManagement />} />
             <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/profile-requests" element={<ProfileRequests />} />
           </Route>
 
           {/* Student Routes */}

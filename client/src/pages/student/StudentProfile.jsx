@@ -12,6 +12,9 @@ const StudentProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [showModal, setShowModal] = useState(false);
+  const [requestText, setRequestText] = useState('');
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -25,6 +28,19 @@ const StudentProfile = () => {
     };
     if (user) fetchProfile();
   }, [user]);
+
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/profile-requests', { requestText });
+      alert('Change request sent to admin for approval.');
+      setShowModal(false);
+      setRequestText('');
+    } catch (error) {
+      console.error('Failed to submit request', error);
+      alert('Failed to send request');
+    }
+  };
 
   if (loading) return <div className="p-8 text-center">Loading profile...</div>;
   if (!profile) return <div className="p-8 text-center">Profile not found.</div>;
@@ -128,14 +144,41 @@ const StudentProfile = () => {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                  <Button variant="outline" type="button">Cancel</Button>
-                  <Button type="button" onClick={() => alert('Change request sent to admin for approval.')}>Change Request</Button>
+                  <Button type="button" onClick={() => setShowModal(true)}>Change Details Request</Button>
                 </div>
               </form>
             </CardContent>
           </Card>
         </motion.div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md shadow-lg">
+            <CardHeader>
+              <CardTitle>Request Data Change</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleRequestSubmit} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">What details do you need changed?</label>
+                  <textarea
+                    required
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
+                    placeholder="E.g. Please update my phone number to 9876543210"
+                    value={requestText}
+                    onChange={(e) => setRequestText(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
+                  <Button type="submit">Send Request</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
