@@ -84,9 +84,28 @@ const updateReport = async (req, res) => {
   }
 };
 
+// @desc    Delete a report (Admin)
+// @route   DELETE /api/reports/:id
+// @access  Private/Admin
+const deleteReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    await Report.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Report removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createReport,
   getMyReports,
   getAllReports,
-  updateReport
+  updateReport,
+  deleteReport
 };

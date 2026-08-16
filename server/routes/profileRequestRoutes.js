@@ -5,7 +5,8 @@ const {
   createRequest,
   getMyRequests,
   getAllRequests,
-  updateRequestStatus
+  updateRequestStatus,
+  deleteRequest
 } = require('../controllers/profileRequestController');
 
 router.route('/')
@@ -15,6 +16,7 @@ router.route('/')
 router.route('/my').get(protect, getMyRequests);
 
 router.route('/:id')
-  .put(protect, admin, updateRequestStatus);
+  .put(protect, admin, updateRequestStatus)
+  .delete(protect, admin, deleteRequest);
 
 module.exports = router;

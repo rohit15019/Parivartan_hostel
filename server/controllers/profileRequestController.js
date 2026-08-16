@@ -83,3 +83,19 @@ exports.updateRequestStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// @desc    Delete a profile change request
+// @route   DELETE /api/profile-requests/:id
+// @access  Private (Admin)
+exports.deleteRequest = async (req, res) => {
+  try {
+    const request = await ProfileRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    await ProfileRequest.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Request removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

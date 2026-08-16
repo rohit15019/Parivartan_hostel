@@ -5,7 +5,8 @@ const {
   createReport,
   getMyReports,
   getAllReports,
-  updateReport
+  updateReport,
+  deleteReport
 } = require('../controllers/reportController');
 
 router.route('/')
@@ -15,6 +16,7 @@ router.route('/')
 router.route('/my').get(protect, getMyReports);
 
 router.route('/:id')
-  .put(protect, admin, updateReport);
+  .put(protect, admin, updateReport)
+  .delete(protect, admin, deleteReport);
 
 module.exports = router;

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
-import { Search, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { Search, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Trash2 } from 'lucide-react';
 import api from '../../lib/api';
 
 const AdminReports = () => {
@@ -40,6 +40,22 @@ const AdminReports = () => {
       setSelectedReport(null);
     } catch (error) {
       console.error('Error updating report:', error);
+    }
+  };
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      try {
+        await api.delete(`/reports/${id}`);
+        setReports(reports.filter(r => r._id !== id));
+        if (selectedReport?._id === id) {
+          setSelectedReport(null);
+        }
+      } catch (error) {
+        console.error('Error deleting report:', error);
+        alert('Failed to delete report');
+      }
     }
   };
 
@@ -118,10 +134,19 @@ const AdminReports = () => {
                       setAdminNotes(report.adminNotes || '');
                     }}
                   >
-                    <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
-                      <div className="flex justify-between items-start mb-1">
+                    <CardContent className="p-3 sm:p-4 flex-1 flex flex-col relative">
+                      <div className="flex justify-between items-start mb-1 pr-6">
                         <h3 className="font-semibold text-base line-clamp-1">{report.title}</h3>
-                        {getStatusBadge(report.status)}
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(report.status)}
+                          <button
+                            onClick={(e) => handleDelete(report._id, e)}
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                            title="Delete Report"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-col gap-y-1">
                         <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { MessageSquare, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Trash2 } from 'lucide-react';
 import api from '../../lib/api';
 
 const ProfileRequests = () => {
@@ -38,6 +38,22 @@ const ProfileRequests = () => {
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error updating request:', error);
+    }
+  };
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this profile change request?')) {
+      try {
+        await api.delete(`/profile-requests/${id}`);
+        setRequests(requests.filter(r => r._id !== id));
+        if (selectedRequest?._id === id) {
+          setSelectedRequest(null);
+        }
+      } catch (error) {
+        console.error('Error deleting request:', error);
+        alert('Failed to delete request');
+      }
     }
   };
 
@@ -94,10 +110,19 @@ const ProfileRequests = () => {
                       setAdminNotes(req.adminNotes || '');
                     }}
                   >
-                    <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
-                      <div className="flex justify-between items-start mb-1">
+                    <CardContent className="p-3 sm:p-4 flex-1 flex flex-col relative">
+                      <div className="flex justify-between items-start mb-1 pr-6">
                         <h3 className="font-semibold text-base line-clamp-1">Profile Change Request</h3>
-                        {getStatusBadge(req.status)}
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(req.status)}
+                          <button
+                            onClick={(e) => handleDelete(req._id, e)}
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                            title="Delete Request"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-col gap-y-1">
                         <span>By: {req.studentId?.name} {req.studentId?.surname} ({req.studentId?.studentId})</span>
