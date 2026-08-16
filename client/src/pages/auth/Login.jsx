@@ -52,7 +52,7 @@ const Login = () => {
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
                 <Building2 className="w-8 h-8 text-primary-300" />
               </div>
-              <h1 className="text-3xl font-bold tracking-tight">StayEase Hostel</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Parivartan Hostel</h1>
             </div>
             
             <h2 className="text-5xl font-bold leading-tight mb-6">
@@ -96,7 +96,7 @@ const Login = () => {
              <div className="p-3 bg-primary-100 dark:bg-primary-900/50 rounded-xl">
                 <Building2 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
               </div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">StayEase</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Parivartan</h1>
           </div>
 
           <Card className="border-none shadow-xl bg-white/50 dark:bg-black/20 backdrop-blur-xl">
