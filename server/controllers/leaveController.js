@@ -89,15 +89,17 @@ const deleteLeaveRequest = async (req, res) => {
       return res.status(404).json({ message: 'Leave request not found' });
     }
 
-    // Verify it belongs to the requesting student
-    const student = await Student.findOne({ userId: req.user._id });
-    if (!student || leave.studentId.toString() !== student._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to delete this request' });
-    }
+    // Verify it belongs to the requesting student or user is admin
+    if (req.user.role !== 'admin') {
+      const student = await Student.findOne({ userId: req.user._id });
+      if (!student || leave.studentId.toString() !== student._id.toString()) {
+        return res.status(401).json({ message: 'Not authorized to delete this request' });
+      }
 
-    // Only allow deletion if status is PENDING
-    if (leave.status !== 'PENDING') {
-      return res.status(400).json({ message: 'Cannot delete processed leave request' });
+      // Only allow student to delete if status is PENDING
+      if (leave.status !== 'PENDING') {
+        return res.status(400).json({ message: 'Cannot delete processed leave request' });
+      }
     }
 
     await LeaveRequest.findByIdAndDelete(req.params.id);
