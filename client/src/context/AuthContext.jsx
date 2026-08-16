@@ -23,14 +23,14 @@ export const AuthProvider = ({ children }) => {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           
-          // DEV MOCK: Ignore backend fetch for now
-          // if (parsedUser.role === 'student' && !parsedUser.name) {
-          //   api.get('/students/profile').then(res => {
-          //     const updatedUser = { ...parsedUser, name: res.data.name };
-          //     setUser(updatedUser);
-          //     localStorage.setItem('user', JSON.stringify(updatedUser));
-          //   }).catch(console.error);
-          // }
+          // If this is an old session without the name, fetch it
+          if (parsedUser.role === 'student' && !parsedUser.name) {
+            api.get('/students/profile').then(res => {
+              const updatedUser = { ...parsedUser, name: res.data.name };
+              setUser(updatedUser);
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            }).catch(console.error);
+          }
         }
       } catch (e) {
         console.error("Failed to restore session", e);
@@ -42,17 +42,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, role) => {
     try {
-      // ==== DEV MOCK: Bypass backend entirely ====
-      // const { data } = await api.post('/auth/login', { email, password, role });
-      
-      const data = {
-        _id: "mock_id_123",
-        email: email,
-        name: email.split('@')[0],
-        role: role,
-        studentId: role === 'student' ? "STU-MOCK-001" : null,
-        token: "mock_token_for_frontend_only"
-      };
+      const { data } = await api.post('/auth/login', { email, password, role });
       
       setToken(data.token);
       setUser(data);
