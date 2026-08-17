@@ -153,6 +153,8 @@ const FeeManagement = () => {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
               <Input 
+                id="studentSearch"
+                name="studentSearch"
                 placeholder="Search students..." 
                 className="pl-9 h-10 w-full"
                 value={studentSearch}
@@ -260,8 +262,10 @@ const FeeManagement = () => {
                       <form className="space-y-4" onSubmit={handleRecordPayment}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Amount Received (₹)</label>
+                            <label htmlFor="amount" className="text-sm font-medium">Amount Received (₹)</label>
                             <Input 
+                              id="amount"
+                              name="amount"
                               type="number" 
                               placeholder="e.g. 15000" 
                               required 
@@ -270,8 +274,10 @@ const FeeManagement = () => {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Payment Date</label>
+                            <label htmlFor="paymentDate" className="text-sm font-medium">Payment Date</label>
                             <Input 
+                              id="paymentDate"
+                              name="paymentDate"
                               type="date" 
                               required
                               value={paymentForm.paymentDate}
@@ -281,8 +287,10 @@ const FeeManagement = () => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Payment Method</label>
+                            <label htmlFor="paymentMethod" className="text-sm font-medium">Payment Method</label>
                             <select 
+                              id="paymentMethod"
+                              name="paymentMethod"
                               className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               value={paymentForm.paymentMethod}
                               onChange={(e) => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}
@@ -294,8 +302,10 @@ const FeeManagement = () => {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Transaction / Ref Number</label>
+                            <label htmlFor="transactionId" className="text-sm font-medium">Transaction / Ref Number</label>
                             <Input 
+                              id="transactionId"
+                              name="transactionId"
                               type="text" 
                               placeholder="Optional" 
                               value={paymentForm.transactionId}
