@@ -111,8 +111,10 @@ const StudentLeaveRequest = () => {
               {error && <div className="p-3 mb-4 text-sm text-red-500 bg-red-100 rounded-lg">{error}</div>}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Leave Type</label>
+                  <label htmlFor="leaveType" className="text-sm font-medium">Leave Type</label>
                   <select 
+                    id="leaveType"
+                    name="leaveType"
                     value={leaveType}
                     onChange={(e) => setLeaveType(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -126,18 +128,20 @@ const StudentLeaveRequest = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">From Date *</label>
-                    <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
+                    <label htmlFor="fromDate" className="text-sm font-medium">From Date *</label>
+                    <Input id="fromDate" name="fromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">To Date *</label>
-                    <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} required min={fromDate} />
+                    <label htmlFor="toDate" className="text-sm font-medium">To Date *</label>
+                    <Input id="toDate" name="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} required min={fromDate} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Reason for Leave *</label>
+                  <label htmlFor="reason" className="text-sm font-medium">Reason for Leave *</label>
                   <textarea 
+                    id="reason"
+                    name="reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[100px] resize-y"
@@ -147,8 +151,8 @@ const StudentLeaveRequest = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Parent/Guardian Phone *</label>
-                  <Input type="text" required minLength={10} maxLength={10} pattern="\d{10}" title="Phone number must be exactly 10 digits" placeholder="10 digit number" value={parentPhone} onChange={(e) => setParentPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} />
+                  <label htmlFor="parentPhone" className="text-sm font-medium">Parent/Guardian Phone *</label>
+                  <Input id="parentPhone" name="parentPhone" type="text" required minLength={10} maxLength={10} pattern="\d{10}" title="Phone number must be exactly 10 digits" placeholder="10 digit number" value={parentPhone} onChange={(e) => setParentPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} />
                 </div>
 
                 <Button type="submit" className="w-full gap-2 mt-4" disabled={submitting}>
