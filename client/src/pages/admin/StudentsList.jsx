@@ -290,63 +290,63 @@ const StudentsList = () => {
                 <form onSubmit={handleAddStudent} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Surname <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_surname" className="text-sm font-medium">Surname <span className="text-red-500">*</span></label>
                       <Input name="add_surname" id="add_surname" required value={newStudent.surname} onChange={(e) => setNewStudent({...newStudent, surname: e.target.value})} placeholder="e.g. Doe" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Student Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_name" className="text-sm font-medium">Student Name <span className="text-red-500">*</span></label>
                       <Input name="add_name" id="add_name" required value={newStudent.name} onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} placeholder="e.g. John" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Father Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_fatherName" className="text-sm font-medium">Father Name <span className="text-red-500">*</span></label>
                       <Input name="add_fatherName" id="add_fatherName" required value={newStudent.fatherName} onChange={(e) => setNewStudent({...newStudent, fatherName: e.target.value})} placeholder="e.g. Richard" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Email Address (Optional)</label>
+                      <label htmlFor="add_email" className="text-sm font-medium">Email Address (Optional)</label>
                       <Input name="add_email" id="add_email" type="email" value={newStudent.email} onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} placeholder="e.g. student@example.com" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Student Phone No. <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_phone" className="text-sm font-medium">Student Phone No. <span className="text-red-500">*</span></label>
                       <Input name="add_phone" id="add_phone" required type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={newStudent.phone} onChange={(e) => setNewStudent({...newStudent, phone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Father Phone No. <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_fatherPhone" className="text-sm font-medium">Father Phone No. <span className="text-red-500">*</span></label>
                       <Input name="add_fatherPhone" id="add_fatherPhone" required type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={newStudent.fatherPhone} onChange={(e) => setNewStudent({...newStudent, fatherPhone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Mother Phone No. (Optional)</label>
+                      <label htmlFor="add_motherPhone" className="text-sm font-medium">Mother Phone No. (Optional)</label>
                       <Input name="add_motherPhone" id="add_motherPhone" type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={newStudent.motherPhone} onChange={(e) => setNewStudent({...newStudent, motherPhone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Date Of Birth <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_dob" className="text-sm font-medium">Date Of Birth <span className="text-red-500">*</span></label>
                       <Input name="add_dob" id="add_dob" required type="date" value={newStudent.dob} onChange={(e) => setNewStudent({...newStudent, dob: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Village Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_village" className="text-sm font-medium">Village Name <span className="text-red-500">*</span></label>
                       <Input name="add_village" id="add_village" required value={newStudent.village} onChange={(e) => setNewStudent({...newStudent, village: e.target.value})} placeholder="Village" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Taluka <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_taluka" className="text-sm font-medium">Taluka <span className="text-red-500">*</span></label>
                       <Input name="add_taluka" id="add_taluka" required value={newStudent.taluka} onChange={(e) => setNewStudent({...newStudent, taluka: e.target.value})} placeholder="Taluka" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">District <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_district" className="text-sm font-medium">District <span className="text-red-500">*</span></label>
                       <Input name="add_district" id="add_district" required value={newStudent.district} onChange={(e) => setNewStudent({...newStudent, district: e.target.value})} placeholder="District" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Pin Code (Optional)</label>
+                      <label htmlFor="add_pincode" className="text-sm font-medium">Pin Code (Optional)</label>
                       <Input name="add_pincode" id="add_pincode" value={newStudent.pincode} onChange={(e) => setNewStudent({...newStudent, pincode: e.target.value})} placeholder="Pincode" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">School Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_school" className="text-sm font-medium">School Name <span className="text-red-500">*</span></label>
                       <Input name="add_school" id="add_school" required value={newStudent.school} onChange={(e) => setNewStudent({...newStudent, school: e.target.value})} placeholder="School Name" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">College Name (Optional)</label>
+                      <label htmlFor="add_college" className="text-sm font-medium">College Name (Optional)</label>
                       <Input name="add_college" id="add_college" value={newStudent.college} onChange={(e) => setNewStudent({...newStudent, college: e.target.value})} placeholder="College Name" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Room Number <span className="text-red-500">*</span></label>
+                      <label htmlFor="add_room" className="text-sm font-medium">Room Number <span className="text-red-500">*</span></label>
                       <select 
                         name="add_room"
                         id="add_room"
@@ -395,59 +395,59 @@ const StudentsList = () => {
                 <form onSubmit={handleEditStudent} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Surname <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_surname" className="text-sm font-medium">Surname <span className="text-red-500">*</span></label>
                       <Input name="edit_surname" id="edit_surname" required value={editingStudent.surname} onChange={(e) => setEditingStudent({...editingStudent, surname: e.target.value})} placeholder="e.g. Doe" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Student Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_name" className="text-sm font-medium">Student Name <span className="text-red-500">*</span></label>
                       <Input name="edit_name" id="edit_name" required value={editingStudent.name} onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})} placeholder="e.g. John" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Father Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_fatherName" className="text-sm font-medium">Father Name <span className="text-red-500">*</span></label>
                       <Input name="edit_fatherName" id="edit_fatherName" required value={editingStudent.fatherName} onChange={(e) => setEditingStudent({...editingStudent, fatherName: e.target.value})} placeholder="e.g. Richard" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Student Phone No. <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_phone" className="text-sm font-medium">Student Phone No. <span className="text-red-500">*</span></label>
                       <Input name="edit_phone" id="edit_phone" required type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={editingStudent.phone} onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Father Phone No. <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_fatherPhone" className="text-sm font-medium">Father Phone No. <span className="text-red-500">*</span></label>
                       <Input name="edit_fatherPhone" id="edit_fatherPhone" required type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={editingStudent.fatherPhone} onChange={(e) => setEditingStudent({...editingStudent, fatherPhone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Mother Phone No. (Optional)</label>
+                      <label htmlFor="edit_motherPhone" className="text-sm font-medium">Mother Phone No. (Optional)</label>
                       <Input name="edit_motherPhone" id="edit_motherPhone" type="tel" pattern="[0-9]{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" value={editingStudent.motherPhone} onChange={(e) => setEditingStudent({...editingStudent, motherPhone: e.target.value.replace(/\D/g, '')})} placeholder="10 digit mobile number" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Date Of Birth <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_dob" className="text-sm font-medium">Date Of Birth <span className="text-red-500">*</span></label>
                       <Input name="edit_dob" id="edit_dob" required type="date" value={editingStudent.dob} onChange={(e) => setEditingStudent({...editingStudent, dob: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Village Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_village" className="text-sm font-medium">Village Name <span className="text-red-500">*</span></label>
                       <Input name="edit_village" id="edit_village" required value={editingStudent.village} onChange={(e) => setEditingStudent({...editingStudent, village: e.target.value})} placeholder="Village" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Taluka <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_taluka" className="text-sm font-medium">Taluka <span className="text-red-500">*</span></label>
                       <Input name="edit_taluka" id="edit_taluka" required value={editingStudent.taluka} onChange={(e) => setEditingStudent({...editingStudent, taluka: e.target.value})} placeholder="Taluka" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">District <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_district" className="text-sm font-medium">District <span className="text-red-500">*</span></label>
                       <Input name="edit_district" id="edit_district" required value={editingStudent.district} onChange={(e) => setEditingStudent({...editingStudent, district: e.target.value})} placeholder="District" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Pin Code (Optional)</label>
+                      <label htmlFor="edit_pincode" className="text-sm font-medium">Pin Code (Optional)</label>
                       <Input name="edit_pincode" id="edit_pincode" value={editingStudent.pincode} onChange={(e) => setEditingStudent({...editingStudent, pincode: e.target.value})} placeholder="Pincode" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">School Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_school" className="text-sm font-medium">School Name <span className="text-red-500">*</span></label>
                       <Input name="edit_school" id="edit_school" required value={editingStudent.school} onChange={(e) => setEditingStudent({...editingStudent, school: e.target.value})} placeholder="School Name" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">College Name (Optional)</label>
+                      <label htmlFor="edit_college" className="text-sm font-medium">College Name (Optional)</label>
                       <Input name="edit_college" id="edit_college" value={editingStudent.college} onChange={(e) => setEditingStudent({...editingStudent, college: e.target.value})} placeholder="College Name" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Room Number <span className="text-red-500">*</span></label>
+                      <label htmlFor="edit_room" className="text-sm font-medium">Room Number <span className="text-red-500">*</span></label>
                       <select 
                         name="edit_room"
                         id="edit_room"
