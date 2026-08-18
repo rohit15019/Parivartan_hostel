@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Home, Users, Building, X } from 'lucide-react';
+import { Plus, Trash2, Home, Users, Building, X, Search } from 'lucide-react';
 import api from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -9,6 +9,8 @@ import { Input } from '../../components/ui/Input';
 const RoomsManagement = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'available', 'full'
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newRoom, setNewRoom] = useState({ roomNumber: '', capacity: 2, floor: 1 });
   const [isOccupantsModalOpen, setIsOccupantsModalOpen] = useState(false);
@@ -64,14 +66,68 @@ const RoomsManagement = () => {
     setIsOccupantsModalOpen(true);
   };
 
+  const availableRoomsCount = rooms.filter(r => r.currentOccupants < r.capacity).length;
+  const fullRoomsCount = rooms.filter(r => r.currentOccupants >= r.capacity).length;
+
+  const filteredRooms = rooms.filter(room => {
+    const isFull = room.currentOccupants >= room.capacity;
+    if (filterStatus === 'available' && isFull) return false;
+    if (filterStatus === 'full' && !isFull) return false;
+
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase().trim();
+    const matchesRoom = String(room.roomNumber || '').toLowerCase().includes(searchLower);
+    const matchesFloor = String(room.floor || '').toLowerCase().includes(searchLower);
+    const matchesOccupants = (room.occupantDetails || []).some(student => 
+      (student.name || '').toLowerCase().includes(searchLower) ||
+      (student.surname || '').toLowerCase().includes(searchLower) ||
+      (student.studentId || '').toLowerCase().includes(searchLower)
+    );
+
+    return matchesRoom || matchesFloor || matchesOccupants;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Rooms Management</h1>
-          <p className="text-black/60 dark:text-white/60">Manage hostel rooms and monitor occupancy.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Left Side: Search and Availability Filter */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-1">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
+            <Input 
+              id="searchRoom"
+              name="searchRoom"
+              placeholder="Search room number, floor..." 
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg shrink-0">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === 'all' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+            >
+              All ({rooms.length})
+            </button>
+            <button
+              onClick={() => setFilterStatus('available')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === 'available' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+            >
+              Available ({availableRoomsCount})
+            </button>
+            <button
+              onClick={() => setFilterStatus('full')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === 'full' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+            >
+              Full ({fullRoomsCount})
+            </button>
+          </div>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+
+        {/* Right Side: Add Room Button */}
+        <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Add Room
         </Button>
@@ -85,9 +141,15 @@ const RoomsManagement = () => {
           <h3 className="text-lg font-medium">No Rooms Found</h3>
           <p className="text-black/50 dark:text-white/50 mt-1">Get started by adding your first room.</p>
         </div>
+      ) : filteredRooms.length === 0 ? (
+        <div className="text-center py-12 bg-card rounded-xl border border-border">
+          <Home className="w-12 h-12 mx-auto text-black/20 dark:text-white/20 mb-4" />
+          <h3 className="text-lg font-medium">No Rooms Match Your Filter</h3>
+          <p className="text-black/50 dark:text-white/50 mt-1">Try searching for a different room or change the availability filter.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {rooms.map((room, idx) => {
+          {filteredRooms.map((room, idx) => {
             const isFull = room.currentOccupants >= room.capacity;
             const occupancyPercent = Math.min((room.currentOccupants / room.capacity) * 100, 100);
 
