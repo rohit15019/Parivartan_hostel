@@ -139,14 +139,7 @@ const FeeManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Fee Management</h1>
-          <p className="text-black/60 dark:text-white/60">Manage student fees, record payments, and view history.</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-14rem)] min-h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-8rem)] min-h-[600px]">
         {/* Left Column: Students List */}
         <div className="lg:col-span-1 border border-border rounded-xl bg-card overflow-hidden flex flex-col h-full shadow-sm">
           <div className="p-4 border-b border-border">

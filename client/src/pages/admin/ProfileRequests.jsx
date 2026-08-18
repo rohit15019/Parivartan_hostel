@@ -172,8 +172,10 @@ const ProfileRequests = () => {
                 </div>
                 <form onSubmit={handleUpdate} className="space-y-4 border-t pt-4 border-border">
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Update Status</label>
+                    <label htmlFor="profileReqStatus" className="text-sm font-medium mb-1 block">Update Status</label>
                     <select
+                      id="profileReqStatus"
+                      name="profileReqStatus"
                       value={status}
                       onChange={(e) => setStatus(e.target.value)}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -184,8 +186,10 @@ const ProfileRequests = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Admin Notes</label>
+                    <label htmlFor="profileReqNotes" className="text-sm font-medium mb-1 block">Admin Notes</label>
                     <textarea
+                      id="profileReqNotes"
+                      name="profileReqNotes"
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}

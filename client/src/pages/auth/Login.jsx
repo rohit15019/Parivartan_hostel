@@ -127,12 +127,15 @@ const Login = () => {
 
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none text-foreground">
+                  <label htmlFor="username" className="text-sm font-medium leading-none text-foreground">
                     {role === 'admin' ? 'Email Address' : 'Student ID / Email / Phone'}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
                     <Input 
+                      id="username"
+                      name="username"
+                      autoComplete="username"
                       type="text" 
                       placeholder={role === 'admin' ? 'admin@hostel.com' : 'STU-2026-001 / 9876543210'} 
                       className="pl-10 h-11"
@@ -145,7 +148,7 @@ const Login = () => {
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none text-foreground">
+                    <label htmlFor="password" className="text-sm font-medium leading-none text-foreground">
                       Password
                     </label>
                     <a href="#" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
@@ -155,6 +158,9 @@ const Login = () => {
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
                     <Input 
+                      id="password"
+                      name="password"
+                      autoComplete="current-password"
                       type="password" 
                       placeholder="••••••••" 
                       className="pl-10 h-11"

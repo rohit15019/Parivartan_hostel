@@ -48,14 +48,27 @@ const getStudentProfile = async (req, res) => {
 // @route   POST /api/students
 // @access  Private/Admin
 const createStudent = async (req, res) => {
-  const {
+  let {
     studentId, surname, name, email, password, phone,
     fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school,
     college, course, year, roomNumber,
     totalFees, paymentFrequency, dueDate
   } = req.body;
 
+  let createdUser = null;
+  let createdStudent = null;
+
   try {
+    // Generate email if missing
+    if (!email) {
+      email = `student_${Date.now()}_${Math.floor(Math.random() * 1000)}@hostel.com`;
+    }
+
+    // Default password if missing
+    if (!password) {
+      password = 'password123';
+    }
+
     // 1. Create User
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -69,59 +82,86 @@ const createStudent = async (req, res) => {
       if (room) {
         const occupants = await Student.countDocuments({ roomNumber });
         if (occupants >= room.capacity) {
-          return res.status(400).json({ message: 'Room is already full' });
+          return res.status(400).json({ message: `Room ${roomNumber} is already full (Capacity: ${room.capacity})` });
         }
       } else {
-        return res.status(400).json({ message: 'Room not found' });
+        return res.status(400).json({ message: `Room ${roomNumber} not found` });
+      }
+    }
+
+    // Auto-generate studentId if not provided or already taken
+    const currentYear = new Date().getFullYear();
+    const prefix = `STU-${currentYear}-`;
+    if (!studentId || await Student.findOne({ studentId })) {
+      const existingStudents = await Student.find({ studentId: new RegExp(`^${prefix}`) }).select('studentId');
+      let maxNum = 0;
+      for (const s of existingStudents) {
+        const numPart = parseInt(s.studentId.replace(prefix, ''), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+          maxNum = numPart;
+        }
+      }
+      let nextNum = maxNum + 1;
+      studentId = `${prefix}${String(nextNum).padStart(3, '0')}`;
+      while (await Student.findOne({ studentId })) {
+        nextNum++;
+        studentId = `${prefix}${String(nextNum).padStart(3, '0')}`;
       }
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({
+    createdUser = await User.create({
       email,
       password: hashedPassword,
       role: 'student'
     });
 
     // 2. Create Student
-    const student = await Student.create({
-      userId: user._id,
+    createdStudent = await Student.create({
+      userId: createdUser._id,
       studentId,
       surname,
       name,
       phone,
       fatherName,
       fatherPhone,
-      motherPhone,
+      motherPhone: motherPhone || '',
       dob,
       village,
       taluka,
       district,
-      pincode,
+      pincode: pincode || '',
       school,
-      college,
-      course,
-      year,
+      college: college || '',
+      course: course || 'B.Tech',
+      year: year || '1st Year',
       roomNumber
     });
 
     // Link student to user
-    user.studentId = student._id;
-    await user.save();
+    createdUser.studentId = createdStudent._id;
+    await createdUser.save();
 
     // 3. Create initial Fee record
     const fee = await Fee.create({
-      studentId: student._id,
-      totalFees: totalFees || 0,
+      studentId: createdStudent._id,
+      totalFees: totalFees || 60000,
       paymentFrequency: paymentFrequency || 'Yearly',
       dueDate: dueDate || null
     });
 
-    res.status(201).json({ student, fee });
+    res.status(201).json({ student: createdStudent, fee });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // Rollback created user and student if an error occurs
+    if (createdUser) {
+      await User.findByIdAndDelete(createdUser._id).catch(() => {});
+    }
+    if (createdStudent) {
+      await Student.findByIdAndDelete(createdStudent._id).catch(() => {});
+    }
+    res.status(400).json({ message: error.message || 'Failed to create student' });
   }
 };
 

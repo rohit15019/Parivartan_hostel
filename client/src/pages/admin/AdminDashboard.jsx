@@ -113,6 +113,9 @@ const AdminDashboard = () => {
               <CardTitle>Fee Collection Overview</CardTitle>
               {Object.keys(yearlyGraphData).length > 0 && (
                 <select 
+                  id="selectedYear"
+                  name="selectedYear"
+                  aria-label="Select Year"
                   className="bg-black/5 dark:bg-white/5 border-none text-sm font-medium rounded-lg p-2 focus:ring-2 focus:ring-primary-500"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}

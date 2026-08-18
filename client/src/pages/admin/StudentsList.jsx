@@ -48,13 +48,8 @@ const StudentsList = () => {
   const handleAddStudent = async (e) => {
     e.preventDefault();
     try {
-      const generatedEmail = newStudent.email || `student_${Date.now()}@hostel.com`;
-      // Mocking password creation and passing required fields for the backend
       const studentData = {
         ...newStudent,
-        studentId: `STU-2026-${String(students.length + 1).padStart(3, '0')}`,
-        email: generatedEmail,
-        password: 'password123', // Default password for new students
         roomNumber: newStudent.room,
         course: 'B.Tech',
         year: '1st Year',
@@ -68,7 +63,12 @@ const StudentsList = () => {
       setStudents([...students, { ...data.student, fee: data.fee }]);
       setIsAddModalOpen(false);
       setNewStudent(initialState);
-      alert(`Student ${newStudent.name} added successfully! They can now login using ${generatedEmail} and password: password123`);
+      
+      // Refresh rooms so occupancies update
+      const roomsRes = await api.get('/rooms');
+      setRooms(roomsRes.data);
+
+      alert(`Student ${data.student.name} added successfully! (ID: ${data.student.studentId})`);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to add student');
     }
@@ -99,6 +99,11 @@ const StudentsList = () => {
       setStudents(students.map(s => (s._id || s.id) === studentIdToUpdate ? { ...s, ...data } : s));
       setIsEditModalOpen(false);
       setEditingStudent(null);
+      
+      // Refresh rooms so occupancies update
+      const roomsRes = await api.get('/rooms');
+      setRooms(roomsRes.data);
+
       alert('Student updated successfully!');
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update student');
@@ -112,6 +117,11 @@ const StudentsList = () => {
     try {
       await api.delete(`/students/${studentId}`);
       setStudents(students.filter(s => (s._id || s.id) !== studentId));
+      
+      // Refresh rooms so occupancies update
+      const roomsRes = await api.get('/rooms');
+      setRooms(roomsRes.data);
+
       alert('Student deleted successfully.');
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to delete student');
@@ -157,6 +167,9 @@ const StudentsList = () => {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 5;
+
   const filteredStudents = students.filter(student => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -169,21 +182,29 @@ const StudentsList = () => {
     );
   });
 
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  // Reset to page 1 when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Students</h1>
-          <p className="text-black/60 dark:text-white/60">Manage all hostel students and their fees.</p>
-        </div>
-        <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="w-4 h-4" /> Add Student
-        </Button>
-      </div>
-
       <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
-          <div className="relative w-full md:w-96">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6">
+          <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
             <Input 
               name="search"
@@ -194,7 +215,9 @@ const StudentsList = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="w-4 h-4" /> Add Student
+          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -211,9 +234,9 @@ const StudentsList = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="5" className="p-4 text-center">Loading students...</td></tr>
-              ) : filteredStudents.length === 0 ? (
+              ) : currentStudents.length === 0 ? (
                 <tr><td colSpan="5" className="p-4 text-center">No students found.</td></tr>
-              ) : filteredStudents.map((student, idx) => {
+              ) : currentStudents.map((student, idx) => {
                 const total = student.fee?.totalFees || 0;
                 const paid = student.fee?.paidAmount || 0;
                 const status = total > 0 ? (paid >= total ? 'PAID' : paid > 0 ? 'HALF PAID' : 'PENDING') : 'PENDING';
@@ -268,6 +291,20 @@ const StudentsList = () => {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
+            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <span className="text-sm text-black/60 dark:text-white/60">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+              Next
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Add Student Modal */}
@@ -356,11 +393,19 @@ const StudentsList = () => {
                         className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                       >
                         <option value="" className="text-black dark:text-black">Select Room</option>
-                        {rooms.map(room => (
-                          <option key={room._id} value={room.roomNumber} className="text-black dark:text-black">
-                            Room {room.roomNumber} {room.currentOccupants >= room.capacity ? '(Full)' : `(Avail: ${room.capacity - room.currentOccupants})`}
-                          </option>
-                        ))}
+                        {rooms.map(room => {
+                          const isFull = room.currentOccupants >= room.capacity;
+                          return (
+                            <option 
+                              key={room._id} 
+                              value={room.roomNumber} 
+                              disabled={isFull}
+                              className="text-black dark:text-black"
+                            >
+                              Room {room.roomNumber} {isFull ? '(Full)' : `(Avail: ${room.capacity - room.currentOccupants})`}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                   </div>
@@ -457,11 +502,22 @@ const StudentsList = () => {
                         className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                       >
                         <option value="" className="text-black dark:text-black">Select Room</option>
-                        {rooms.map(room => (
-                          <option key={room._id} value={room.roomNumber} className="text-black dark:text-black">
-                            Room {room.roomNumber}
-                          </option>
-                        ))}
+                        {rooms.map(room => {
+                          const currentStudentRoom = editingStudent.room || editingStudent.roomNumber;
+                          const isCurrentRoom = room.roomNumber === currentStudentRoom;
+                          const isFull = !isCurrentRoom && room.currentOccupants >= room.capacity;
+                          const avail = isCurrentRoom ? (room.capacity - room.currentOccupants + 1) : (room.capacity - room.currentOccupants);
+                          return (
+                            <option 
+                              key={room._id} 
+                              value={room.roomNumber} 
+                              disabled={isFull}
+                              className="text-black dark:text-black"
+                            >
+                              Room {room.roomNumber} {isFull ? '(Full)' : `(Avail: ${avail})`}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                   </div>

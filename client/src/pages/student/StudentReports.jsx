@@ -88,8 +88,10 @@ const StudentReports = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Title / Subject</label>
+                <label htmlFor="reportTitle" className="text-sm font-medium mb-1 block">Title / Subject</label>
                 <Input
+                  id="reportTitle"
+                  name="reportTitle"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -97,8 +99,10 @@ const StudentReports = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Description</label>
+                <label htmlFor="reportDescription" className="text-sm font-medium mb-1 block">Description</label>
                 <textarea
+                  id="reportDescription"
+                  name="reportDescription"
                   required
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[100px]"
                   value={description}

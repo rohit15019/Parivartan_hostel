@@ -102,6 +102,9 @@ const AdminReports = () => {
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
           <Input 
+            id="searchReports"
+            name="searchReports"
+            aria-label="Search reports"
             placeholder="Search reports..." 
             className="pl-9"
             value={searchTerm}
@@ -197,8 +200,10 @@ const AdminReports = () => {
                 </div>
                 <form onSubmit={handleUpdate} className="space-y-4 border-t pt-4 border-border">
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Status</label>
+                    <label htmlFor="adminReportStatus" className="text-sm font-medium mb-1 block">Status</label>
                     <select
+                      id="adminReportStatus"
+                      name="adminReportStatus"
                       value={status}
                       onChange={(e) => setStatus(e.target.value)}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -210,8 +215,10 @@ const AdminReports = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Admin Notes</label>
+                    <label htmlFor="adminReportNotes" className="text-sm font-medium mb-1 block">Admin Notes</label>
                     <textarea
+                      id="adminReportNotes"
+                      name="adminReportNotes"
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}

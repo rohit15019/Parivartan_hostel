@@ -181,8 +181,10 @@ const RoomsManagement = () => {
 
               <form onSubmit={handleAddRoom} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Room Number *</label>
+                  <label htmlFor="roomNumber" className="block text-sm font-medium mb-1">Room Number *</label>
                   <Input 
+                    id="roomNumber"
+                    name="roomNumber"
                     required 
                     placeholder="e.g. 101, A-202"
                     value={newRoom.roomNumber}
@@ -191,8 +193,10 @@ const RoomsManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Capacity *</label>
+                    <label htmlFor="capacity" className="block text-sm font-medium mb-1">Capacity *</label>
                     <Input 
+                      id="capacity"
+                      name="capacity"
                       type="number" 
                       required 
                       min="1"
@@ -201,8 +205,10 @@ const RoomsManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Floor</label>
+                    <label htmlFor="floor" className="block text-sm font-medium mb-1">Floor</label>
                     <Input 
+                      id="floor"
+                      name="floor"
                       type="number"
                       value={newRoom.floor}
                       onChange={(e) => setNewRoom({...newRoom, floor: parseInt(e.target.value) || 1})}

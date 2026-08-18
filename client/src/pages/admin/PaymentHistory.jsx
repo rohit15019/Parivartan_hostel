@@ -82,6 +82,9 @@ const PaymentHistory = () => {
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
             <Input 
+              id="searchPayments"
+              name="searchPayments"
+              aria-label="Search payments by name, room, or transaction ID"
               placeholder="Search by name, room, or transaction ID..." 
               className="pl-10"
               value={searchTerm}
@@ -118,7 +121,6 @@ const PaymentHistory = () => {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium">{new Date(payment.paymentDate).toLocaleDateString()}</div>
-                    <div className="text-xs text-black/50 dark:text-white/50">{new Date(payment.paymentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-semibold">{payment.studentId?.name || 'Unknown'}</div>

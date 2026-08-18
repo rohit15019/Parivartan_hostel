@@ -84,24 +84,24 @@ const StudentProfile = () => {
               <form className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Full Name</label>
+                    <label htmlFor="profileFullName" className="text-sm font-medium">Full Name</label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                      <Input defaultValue={profile.name} className="pl-10" disabled />
+                      <Input id="profileFullName" name="profileFullName" defaultValue={profile.name} className="pl-10" disabled />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Email Address</label>
+                    <label htmlFor="profileEmail" className="text-sm font-medium">Email Address</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                      <Input defaultValue={user?.email} className="pl-10" disabled />
+                      <Input id="profileEmail" name="profileEmail" defaultValue={user?.email} className="pl-10" disabled />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Phone Number</label>
+                    <label htmlFor="profilePhone" className="text-sm font-medium">Phone Number</label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                      <Input defaultValue={profile.phone} className="pl-10" disabled />
+                      <Input id="profilePhone" name="profilePhone" defaultValue={profile.phone} className="pl-10" disabled />
                     </div>
                   </div>
                 </div>
@@ -110,15 +110,15 @@ const StudentProfile = () => {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-4">Academic Info</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">College</label>
+                      <label htmlFor="profileCollege" className="text-sm font-medium">College</label>
                       <div className="relative">
                         <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                        <Input defaultValue={profile.college} className="pl-10" disabled />
+                        <Input id="profileCollege" name="profileCollege" defaultValue={profile.college} className="pl-10" disabled />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Course & Year</label>
-                      <Input defaultValue={`${profile.course} - ${profile.year}`} disabled />
+                      <label htmlFor="profileCourseYear" className="text-sm font-medium">Course & Year</label>
+                      <Input id="profileCourseYear" name="profileCourseYear" defaultValue={`${profile.course} - ${profile.year}`} disabled />
                     </div>
                   </div>
                 </div>
@@ -127,17 +127,17 @@ const StudentProfile = () => {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-black/50 dark:text-white/50 mb-4">Guardian Info</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Parent/Guardian Name</label>
+                      <label htmlFor="profileParentName" className="text-sm font-medium">Parent/Guardian Name</label>
                       <div className="relative">
                         <Heart className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                        <Input defaultValue={profile.parentName} className="pl-10" disabled />
+                        <Input id="profileParentName" name="profileParentName" defaultValue={profile.parentName} className="pl-10" disabled />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Parent Phone</label>
+                      <label htmlFor="profileParentPhone" className="text-sm font-medium">Parent Phone</label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                        <Input defaultValue={profile.parentPhone} className="pl-10" disabled />
+                        <Input id="profileParentPhone" name="profileParentPhone" defaultValue={profile.parentPhone} className="pl-10" disabled />
                       </div>
                     </div>
                   </div>
@@ -161,8 +161,10 @@ const StudentProfile = () => {
             <CardContent>
               <form onSubmit={handleRequestSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">What details do you need changed?</label>
+                  <label htmlFor="requestChangeText" className="text-sm font-medium mb-1 block">What details do you need changed?</label>
                   <textarea
+                    id="requestChangeText"
+                    name="requestChangeText"
                     required
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
                     placeholder="E.g. Please update my phone number to 9876543210"
