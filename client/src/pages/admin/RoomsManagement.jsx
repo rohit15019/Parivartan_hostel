@@ -66,6 +66,13 @@ const RoomsManagement = () => {
     setIsOccupantsModalOpen(true);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const roomsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
+
   const availableRoomsCount = rooms.filter(r => r.currentOccupants < r.capacity).length;
   const fullRoomsCount = rooms.filter(r => r.currentOccupants >= r.capacity).length;
 
@@ -86,6 +93,19 @@ const RoomsManagement = () => {
 
     return matchesRoom || matchesFloor || matchesOccupants;
   });
+
+  const indexOfLastRoom = currentPage * roomsPerPage;
+  const indexOfFirstRoom = indexOfLastRoom - roomsPerPage;
+  const currentRooms = filteredRooms.slice(indexOfFirstRoom, indexOfLastRoom);
+  const totalPages = Math.ceil(filteredRooms.length / roomsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
   return (
     <div className="space-y-6">
@@ -148,80 +168,96 @@ const RoomsManagement = () => {
           <p className="text-black/50 dark:text-white/50 mt-1">Try searching for a different room or change the availability filter.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredRooms.map((room, idx) => {
-            const isFull = room.currentOccupants >= room.capacity;
-            const occupancyPercent = Math.min((room.currentOccupants / room.capacity) * 100, 100);
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {currentRooms.map((room, idx) => {
+              const isFull = room.currentOccupants >= room.capacity;
+              const occupancyPercent = Math.min((room.currentOccupants / room.capacity) * 100, 100);
 
-            return (
-              <motion.div
-                key={room._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <Card 
-                  className="h-full overflow-hidden flex flex-col group relative cursor-pointer hover:border-primary-500/50 transition-colors"
-                  onClick={() => handleRoomClick(room)}
+              return (
+                <motion.div
+                  key={room._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
                 >
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteRoom(room._id, room.roomNumber, room.currentOccupants);
-                      }}
-                      className="p-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors"
-                      title="Delete Room"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <CardContent className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400">
-                        <Home className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold tracking-tight">Room {room.roomNumber}</h3>
-                        <p className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1 mt-0.5">
-                          <Building className="w-3 h-3" /> Floor {room.floor || 1}
-                        </p>
-                      </div>
+                  <Card 
+                    className="h-full overflow-hidden flex flex-col group relative cursor-pointer hover:border-primary-500/50 transition-colors"
+                    onClick={() => handleRoomClick(room)}
+                  >
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteRoom(room._id, room.roomNumber, room.currentOccupants);
+                        }}
+                        className="p-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors"
+                        title="Delete Room"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
+                    
+                    <CardContent className="p-5 flex-1 flex flex-col">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400">
+                          <Home className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold tracking-tight">Room {room.roomNumber}</h3>
+                          <p className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1 mt-0.5">
+                            <Building className="w-3 h-3" /> Floor {room.floor || 1}
+                          </p>
+                        </div>
+                      </div>
 
-                    <div className="mt-auto space-y-4">
-                      <div className="flex justify-between items-end">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-black/40 dark:text-white/40" />
-                          <span className="text-sm font-medium">
-                            {room.currentOccupants} / {room.capacity}
+                      <div className="mt-auto space-y-4">
+                        <div className="flex justify-between items-end">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-black/40 dark:text-white/40" />
+                            <span className="text-sm font-medium">
+                              {room.currentOccupants} / {room.capacity}
+                            </span>
+                          </div>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            isFull 
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          }`}>
+                            {isFull ? 'Full' : 'Available'}
                           </span>
                         </div>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          isFull 
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        }`}>
-                          {isFull ? 'Full' : 'Available'}
-                        </span>
-                      </div>
 
-                      <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${occupancyPercent}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-primary-500'}`}
-                        />
+                        <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${occupancyPercent}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-primary-500'}`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border mt-6">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <span className="text-sm text-black/60 dark:text-white/60">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add Room Modal */}
