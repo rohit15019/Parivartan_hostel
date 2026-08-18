@@ -83,15 +83,15 @@ const RoomsManagement = () => {
 
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase().trim();
-    const matchesRoom = String(room.roomNumber || '').toLowerCase().includes(searchLower);
-    const matchesFloor = String(room.floor || '').toLowerCase().includes(searchLower);
-    const matchesOccupants = (room.occupantDetails || []).some(student => 
-      (student.name || '').toLowerCase().includes(searchLower) ||
-      (student.surname || '').toLowerCase().includes(searchLower) ||
-      (student.studentId || '').toLowerCase().includes(searchLower)
-    );
+    const roomStr = String(room.roomNumber || '').toLowerCase();
+    const capacityStr = String(room.capacity || '').toLowerCase();
+    const floorStr = String(room.floor ?? 1).toLowerCase();
 
-    return matchesRoom || matchesFloor || matchesOccupants;
+    const matchesRoom = roomStr.includes(searchLower) || `room ${roomStr}`.includes(searchLower);
+    const matchesCapacity = capacityStr === searchLower || `capacity ${capacityStr}`.includes(searchLower);
+    const matchesFloor = floorStr.includes(searchLower) || `floor ${floorStr}`.includes(searchLower);
+
+    return matchesRoom || matchesCapacity || matchesFloor;
   });
 
   const indexOfLastRoom = currentPage * roomsPerPage;
@@ -117,7 +117,7 @@ const RoomsManagement = () => {
             <Input 
               id="searchRoom"
               name="searchRoom"
-              placeholder="Search room number, floor..." 
+              placeholder="Search by room, capacity, floor..." 
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
