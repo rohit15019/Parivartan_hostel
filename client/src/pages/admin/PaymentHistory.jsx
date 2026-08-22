@@ -123,8 +123,23 @@ const PaymentHistory = () => {
                     <div className="font-medium">{new Date(payment.paymentDate).toLocaleDateString()}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-semibold">{payment.studentId?.name || 'Unknown'}</div>
-                    <div className="text-xs text-black/50 dark:text-white/50">{payment.studentId?.studentId || 'N/A'}</div>
+                    <div className="flex items-center gap-3">
+                      {payment.studentId?.photo ? (
+                        <img 
+                          src={payment.studentId.photo} 
+                          alt={payment.studentId?.name} 
+                          className="w-9 h-9 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-xs shrink-0">
+                          {(payment.studentId?.name || 'U').charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold">{payment.studentId?.name || 'Unknown'} {payment.studentId?.surname || ''}</div>
+                        <div className="text-xs text-black/50 dark:text-white/50">{payment.studentId?.studentId || 'N/A'}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     {payment.studentId?.roomNumber || 'N/A'}

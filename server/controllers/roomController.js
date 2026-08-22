@@ -6,17 +6,22 @@ const Student = require('../models/Student');
 // @access  Private/Admin
 const getRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({}).sort({ roomNumber: 1 });
+    const rooms = await Room.find({}).collation({ locale: 'en', numericOrdering: true }).sort({ roomNumber: 1 });
     
     // Calculate occupancy for each room
     const roomsWithOccupancy = await Promise.all(rooms.map(async (room) => {
-      const occupants = await Student.find({ roomNumber: room.roomNumber }).select('name surname phone studentId');
+      const occupants = await Student.find({ roomNumber: room.roomNumber }).select('name surname phone studentId photo');
       return {
         ...room.toObject(),
         currentOccupants: occupants.length,
         occupantDetails: occupants
       };
     }));
+
+    // Ensure natural alphanumeric ordering (e.g., Room 1, 2 ... 9, 10, 11)
+    roomsWithOccupancy.sort((a, b) =>
+      String(a.roomNumber).localeCompare(String(b.roomNumber), undefined, { numeric: true, sensitivity: 'base' })
+    );
 
     res.json(roomsWithOccupancy);
   } catch (error) {
@@ -74,4 +79,29 @@ const deleteRoom = async (req, res) => {
   }
 };
 
-module.exports = { getRooms, addRoom, deleteRoom };
+// @desc    Remove a student from a room
+// @route   PUT /api/rooms/remove-student
+// @access  Private/Admin
+const removeStudentFromRoom = async (req, res) => {
+  const { studentId } = req.body;
+
+  try {
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const previousRoom = student.roomNumber;
+    student.roomNumber = '';
+    await student.save();
+
+    res.json({ 
+      message: `${student.name} ${student.surname || ''} removed from Room ${previousRoom || 'N/A'}`.trim(),
+      student 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getRooms, addRoom, deleteRoom, removeStudentFromRoom };

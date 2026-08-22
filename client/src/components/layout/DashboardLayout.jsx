@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Building2, Bell, Menu, X, LogOut, Palette } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
+import { Building2, Menu, X, LogOut, Palette, ChevronDown, User, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -35,14 +35,30 @@ const SIDEBAR_COLORS = [
 
 const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
+
   // Default to Blue color index = 1
   const [colorIndex, setColorIndex] = useState(1);
   const { toggleTheme, theme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
-    navigate('/login');
+    setProfileDropdownOpen(false);
+    logout();
+    navigate('/login', { replace: true });
   };
 
   const toggleSidebarColor = () => {
@@ -50,6 +66,10 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
   };
 
   const currentColor = SIDEBAR_COLORS[colorIndex];
+  const role = user?.role || userRole;
+  const displayName = user?.name || (user?.email ? user.email.split('@')[0] : (role === 'admin' ? 'Admin Sir' : 'Student'));
+  const displayRole = role === 'admin' ? 'Admin' : 'Student';
+  const activeAvatar = user?.photo || userAvatar;
 
   return (
     <div className="min-h-screen bg-background flex text-foreground">
@@ -129,19 +149,95 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
             <button onClick={toggleTheme} title="Toggle Theme" className="p-2 rounded-full text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <button className="relative p-2 rounded-full text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-card"></span>
-            </button>
 
             <div className="h-8 w-px bg-border mx-2 hidden sm:block"></div>
 
-            <div className="flex items-center gap-3">
-              <img src={userAvatar || `https://ui-avatars.com/api/?name=${user?.name || userName}&background=3b82f6&color=fff`} alt={user?.name || userName} className="w-9 h-9 rounded-full border-2 border-border" />
-              <div className="hidden sm:flex flex-col">
-                <span className="text-sm font-medium leading-tight">{user?.name || userName}</span>
-                <span className="text-xs text-black/50 dark:text-white/50">{userRole === 'admin' ? 'Admin' : 'Student'}</span>
-              </div>
+            {/* Profile Dropdown Trigger & Menu */}
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className={`flex items-center gap-3 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all ${
+                  profileDropdownOpen 
+                    ? 'bg-black/5 dark:bg-white/10 border-primary-500 ring-2 ring-primary-500/20' 
+                    : 'border-transparent hover:border-border hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+                title="Account & Profile Menu"
+              >
+                <img 
+                  src={activeAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=3b82f6&color=fff`} 
+                  alt={displayName} 
+                  className="w-9 h-9 rounded-full border-2 border-border object-cover" 
+                />
+                <div className="hidden sm:flex flex-col text-left min-w-0 max-w-[130px]">
+                  <span className="text-sm font-semibold leading-tight truncate text-foreground">{displayName}</span>
+                  <span className="text-xs text-black/50 dark:text-white/50">{displayRole}</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-black/50 dark:text-white/50 transition-transform duration-200 hidden sm:block ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu Popup */}
+              <AnimatePresence>
+                {profileDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-64 bg-card rounded-2xl shadow-xl border border-border overflow-hidden z-50 p-2"
+                  >
+                    {/* User Info Header */}
+                    <div className="p-3 bg-black/5 dark:bg-white/5 rounded-xl mb-1 flex items-center gap-3">
+                      <img 
+                        src={activeAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=3b82f6&color=fff`} 
+                        alt={displayName} 
+                        className="w-10 h-10 rounded-full border-2 border-border object-cover shrink-0" 
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold truncate text-foreground leading-tight">{displayName}</p>
+                        <p className="text-xs text-black/50 dark:text-white/50 truncate mt-0.5">{user?.email || 'Logged in'}</p>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary-600 dark:text-primary-400 mt-1 uppercase tracking-wide">
+                          {userRole === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />} {displayRole} Account
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick navigation links */}
+                    <div className="py-1 space-y-0.5">
+                      {userRole === 'student' ? (
+                        <Link
+                          to="/student/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-foreground transition-colors"
+                        >
+                          <User className="w-4 h-4 text-primary-500" />
+                          <span>My Profile</span>
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/admin/dashboard"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-foreground transition-colors"
+                        >
+                          <Shield className="w-4 h-4 text-primary-500" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      )}
+                    </div>
+
+                    <div className="my-1 border-t border-border"></div>
+
+                    {/* Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Log Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>

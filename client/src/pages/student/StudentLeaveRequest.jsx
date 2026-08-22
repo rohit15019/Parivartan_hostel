@@ -13,6 +13,10 @@ const StudentLeaveRequest = () => {
   const [pastRequests, setPastRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 3;
+
   // Form State
   const [leaveType, setLeaveType] = useState('Home Visit');
   const [fromDate, setFromDate] = useState('');
@@ -71,7 +75,8 @@ const StudentLeaveRequest = () => {
       setReason('');
       setParentPhone('');
       
-      // Refresh requests
+      // Refresh requests and reset to page 1
+      setCurrentPage(1);
       fetchLeaveRequests();
       alert('Leave request submitted successfully!');
     } catch (err) {
@@ -86,11 +91,30 @@ const StudentLeaveRequest = () => {
     
     try {
       await api.delete(`/leaves/${id}`);
-      setPastRequests(pastRequests.filter(req => req._id !== id));
+      const updated = pastRequests.filter(req => req._id !== id);
+      setPastRequests(updated);
+      const newTotalPages = Math.ceil(updated.length / requestsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
       alert('Leave request deleted successfully.');
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to delete leave request');
     }
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(pastRequests.length / requestsPerPage);
+  const indexOfLastRequest = currentPage * requestsPerPage;
+  const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+  const currentRequests = pastRequests.slice(indexOfFirstRequest, indexOfLastRequest);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
   return (
@@ -164,16 +188,23 @@ const StudentLeaveRequest = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Request History</CardTitle>
+          <Card className="h-full flex flex-col justify-between">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle>Request History</CardTitle>
+                {pastRequests.length > 0 && (
+                  <span className="text-xs text-black/50 dark:text-white/50 font-medium">
+                    Total: {pastRequests.length}
+                  </span>
+                )}
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-4 flex-1">
                 {loading ? (
-                  <div className="text-center text-sm text-black/50">Loading requests...</div>
+                  <div className="text-center text-sm text-black/50 py-8">Loading requests...</div>
                 ) : pastRequests.length > 0 ? (
-                  pastRequests.map((req) => (
+                  currentRequests.map((req) => (
                     <div key={req._id} className="p-4 rounded-xl border border-border bg-black/5 dark:bg-white/5 flex flex-col space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 font-medium">
@@ -194,8 +225,10 @@ const StudentLeaveRequest = () => {
                       </div>
                       
                       <div>
-                        <p className="text-sm text-black/60 dark:text-white/60">Reason ({req.leaveType}):</p>
-                        <p className="font-medium">{req.reason}</p>
+                        <p className="text-xs font-medium text-black/50 dark:text-white/50 mb-1">Reason ({req.leaveType}):</p>
+                        <p className="text-sm bg-black/5 dark:bg-white/5 p-2.5 rounded-lg max-h-24 overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-black/80 dark:text-white/80">
+                          {req.reason}
+                        </p>
                       </div>
 
                       <div className="pt-3 border-t border-border flex items-center gap-2 text-sm">
@@ -222,6 +255,20 @@ const StudentLeaveRequest = () => {
                   </div>
                 )}
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center pt-4 border-t border-border mt-auto">
+                  <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                    Previous
+                  </Button>
+                  <span className="text-xs text-black/60 dark:text-white/60 font-medium">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

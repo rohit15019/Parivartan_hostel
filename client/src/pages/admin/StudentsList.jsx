@@ -6,7 +6,6 @@ import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 
 const StudentsList = () => {
@@ -17,7 +16,10 @@ const StudentsList = () => {
     surname: '', name: '', fatherName: '', email: '', 
     phone: '', fatherPhone: '', motherPhone: '', 
     dob: '', village: '', taluka: '', district: '', 
-    pincode: '', school: '', college: '', room: ''
+    pincode: '', school: '', college: '', room: '',
+    deposit: '',
+    monthlyFee: 6000,
+    feeDueDay: 10
   };
   const [newStudent, setNewStudent] = useState(initialState);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -47,14 +49,20 @@ const StudentsList = () => {
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
+    const cleanPhone = (newStudent.phone || '').trim();
+    if (students.some(s => (s.phone || '').trim() === cleanPhone)) {
+      alert('A student with this mobile number already exists');
+      return;
+    }
     try {
       const studentData = {
         ...newStudent,
+        deposit: Number(newStudent.deposit) || 0,
         roomNumber: newStudent.room,
-        course: 'B.Tech',
+        course: '',
         year: '1st Year',
-        totalFees: 60000,
-        paymentFrequency: 'Yearly'
+        monthlyFee: Number(newStudent.monthlyFee) || 6000,
+        feeDueDay: Number(newStudent.feeDueDay) || 10
       };
 
       const { data } = await api.post('/students', studentData);
@@ -76,9 +84,15 @@ const StudentsList = () => {
 
   const handleEditStudent = async (e) => {
     e.preventDefault();
+    const studentIdToUpdate = editingStudent._id || editingStudent.id;
+    const cleanPhone = (editingStudent.phone || '').trim();
+    if (students.some(s => (s._id || s.id) !== studentIdToUpdate && (s.phone || '').trim() === cleanPhone)) {
+      alert('A student with this mobile number already exists');
+      return;
+    }
     try {
-      const studentIdToUpdate = editingStudent._id || editingStudent.id;
       const { data } = await api.put(`/students/${studentIdToUpdate}`, {
+        email: editingStudent.email,
         surname: editingStudent.surname,
         name: editingStudent.name,
         fatherName: editingStudent.fatherName,
@@ -92,6 +106,7 @@ const StudentsList = () => {
         pincode: editingStudent.pincode,
         school: editingStudent.school,
         college: editingStudent.college,
+        deposit: Number(editingStudent.deposit) || 0,
         roomNumber: editingStudent.room || editingStudent.roomNumber
       });
       
@@ -136,8 +151,10 @@ const StudentsList = () => {
         formattedDob = d.toISOString().split('T')[0];
       }
     }
+    const studentEmail = student.userId?.email || student.email || '';
     setEditingStudent({
       ...student,
+      email: studentEmail,
       room: student.roomNumber || student.room || '',
       dob: formattedDob,
       surname: student.surname || '',
@@ -149,22 +166,16 @@ const StudentsList = () => {
       district: student.district || '',
       pincode: student.pincode || '',
       school: student.school || '',
-      college: student.college || ''
+      college: student.college || '',
+      deposit: student.deposit !== undefined && student.deposit !== null ? student.deposit : '',
+      monthlyFee: student.monthlyFee || 6000,
+      feeDueDay: student.feeDueDay || 10
     });
     setIsEditModalOpen(true);
   };
 
   const handleFeeNavigation = (student) => {
     navigate('/admin/fees', { state: { studentId: student._id || student.id, student } });
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'PAID': return <Badge variant="success">🟢 PAID</Badge>;
-      case 'HALF PAID': return <Badge variant="warning">🟡 HALF PAID</Badge>;
-      case 'PENDING': return <Badge variant="danger">🔴 PENDING</Badge>;
-      default: return <Badge>{status}</Badge>;
-    }
   };
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -200,6 +211,13 @@ const StudentsList = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  // Auto-adjust page if current page exceeds total pages after deleting items
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   return (
     <div className="space-y-6">
       <Card className="p-4">
@@ -226,7 +244,7 @@ const StudentsList = () => {
               <tr>
                 <th className="px-6 py-4 font-semibold rounded-l-lg">Student</th>
                 <th className="px-6 py-4 font-semibold">Room & Contact</th>
-                <th className="px-6 py-4 font-semibold">Fees Status</th>
+                <th className="px-6 py-4 font-semibold">Deposit Paid</th>
                 <th className="px-6 py-4 font-semibold">Payment Progress</th>
                 <th className="px-6 py-4 font-semibold rounded-r-lg text-right">Actions</th>
               </tr>
@@ -239,7 +257,6 @@ const StudentsList = () => {
               ) : currentStudents.map((student, idx) => {
                 const total = student.fee?.totalFees || 0;
                 const paid = student.fee?.paidAmount || 0;
-                const status = total > 0 ? (paid >= total ? 'PAID' : paid > 0 ? 'HALF PAID' : 'PENDING') : 'PENDING';
                 return (
                 <motion.tr 
                   key={student._id || student.id} 
@@ -250,9 +267,17 @@ const StudentsList = () => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
-                        {(student.name || 'U').charAt(0)}
-                      </div>
+                      {student.photo ? (
+                        <img 
+                          src={student.photo} 
+                          alt={student.name} 
+                          className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                          {(student.name || 'U').charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <div className="font-semibold">{student.name}</div>
                         <div className="text-xs text-black/50 dark:text-white/50">{student.studentId}</div>
@@ -264,7 +289,9 @@ const StudentsList = () => {
                     <div className="text-xs text-black/50 dark:text-white/50">{student.phone}</div>
                   </td>
                   <td className="px-6 py-4">
-                    {getStatusBadge(status)}
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      ₹{Number(student.deposit || 0).toLocaleString()}
+                    </span>
                   </td>
                   <td className="px-6 py-4 min-w-[200px]">
                     <div className="flex justify-between text-xs mb-1">
@@ -408,6 +435,30 @@ const StudentsList = () => {
                         })}
                       </select>
                     </div>
+                    <div className="space-y-2">
+                      <label htmlFor="add_deposit" className="text-sm font-medium">Deposit (₹)</label>
+                      <Input 
+                        name="add_deposit" 
+                        id="add_deposit" 
+                        type="number" 
+                        min="0"
+                        placeholder="e.g. 5000" 
+                        value={newStudent.deposit} 
+                        onChange={(e) => setNewStudent({...newStudent, deposit: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="add_monthlyFee" className="text-sm font-medium">Monthly Fee Rate (₹)</label>
+                      <Input 
+                        name="add_monthlyFee" 
+                        id="add_monthlyFee" 
+                        type="number" 
+                        min="0"
+                        placeholder="e.g. 6000" 
+                        value={newStudent.monthlyFee} 
+                        onChange={(e) => setNewStudent({...newStudent, monthlyFee: e.target.value})} 
+                      />
+                    </div>
                   </div>
                   <div className="pt-4 flex justify-end gap-3 mt-4">
                     <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
@@ -450,6 +501,10 @@ const StudentsList = () => {
                     <div className="space-y-2">
                       <label htmlFor="edit_fatherName" className="text-sm font-medium">Father Name <span className="text-red-500">*</span></label>
                       <Input name="edit_fatherName" id="edit_fatherName" required value={editingStudent.fatherName} onChange={(e) => setEditingStudent({...editingStudent, fatherName: e.target.value})} placeholder="e.g. Richard" />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="edit_email" className="text-sm font-medium">Email Address (Optional)</label>
+                      <Input name="edit_email" id="edit_email" type="email" value={editingStudent.email || ''} onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})} placeholder="e.g. student@example.com" />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="edit_phone" className="text-sm font-medium">Student Phone No. <span className="text-red-500">*</span></label>
@@ -519,6 +574,30 @@ const StudentsList = () => {
                           );
                         })}
                       </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="edit_deposit" className="text-sm font-medium">Deposit (₹)</label>
+                      <Input 
+                        name="edit_deposit" 
+                        id="edit_deposit" 
+                        type="number" 
+                        min="0"
+                        placeholder="e.g. 5000" 
+                        value={editingStudent.deposit} 
+                        onChange={(e) => setEditingStudent({...editingStudent, deposit: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="edit_monthlyFee" className="text-sm font-medium">Monthly Fee Rate (₹)</label>
+                      <Input 
+                        name="edit_monthlyFee" 
+                        id="edit_monthlyFee" 
+                        type="number" 
+                        min="0"
+                        placeholder="e.g. 6000" 
+                        value={editingStudent.monthlyFee} 
+                        onChange={(e) => setEditingStudent({...editingStudent, monthlyFee: e.target.value})} 
+                      />
                     </div>
                   </div>
                   <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-border pt-6">

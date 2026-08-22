@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Home, Users, Building, X, Search } from 'lucide-react';
+import { Plus, Trash2, Home, Users, Building, X, Search, UserMinus } from 'lucide-react';
 import api from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -37,7 +37,11 @@ const RoomsManagement = () => {
       await api.post('/rooms', newRoom);
       setIsAddModalOpen(false);
       setNewRoom({ roomNumber: '', capacity: 2, floor: 1 });
-      fetchRooms(); // Refresh the list
+      const { data } = await api.get('/rooms');
+      setRooms(data);
+      // Navigate to the last page so the newly added room is shown
+      const newTotalPages = Math.ceil(data.length / roomsPerPage);
+      setCurrentPage(newTotalPages > 0 ? newTotalPages : 1);
     } catch (error) {
       console.error('Failed to add room:', error);
       alert(error.response?.data?.message || 'Failed to add room');
@@ -66,6 +70,33 @@ const RoomsManagement = () => {
     setIsOccupantsModalOpen(true);
   };
 
+  const handleRemoveStudentFromRoom = async (studentId, studentName, roomNumber) => {
+    if (!window.confirm(`Are you sure you want to remove ${studentName || 'this student'} from Room ${roomNumber}?`)) {
+      return;
+    }
+
+    try {
+      await api.put('/rooms/remove-student', { studentId });
+
+      // Update the occupants modal state locally
+      setSelectedRoomDetails(prev => {
+        if (!prev) return prev;
+        const updatedOccupants = (prev.occupantDetails || []).filter(s => s._id !== studentId);
+        return {
+          ...prev,
+          currentOccupants: updatedOccupants.length,
+          occupantDetails: updatedOccupants
+        };
+      });
+
+      // Refresh the rooms list in background
+      await fetchRooms();
+    } catch (error) {
+      console.error('Failed to remove student from room', error);
+      alert(error.response?.data?.message || 'Failed to remove student from room');
+    }
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const roomsPerPage = 8;
 
@@ -92,12 +123,21 @@ const RoomsManagement = () => {
     const matchesFloor = floorStr.includes(searchLower) || `floor ${floorStr}`.includes(searchLower);
 
     return matchesRoom || matchesCapacity || matchesFloor;
-  });
+  }).sort((a, b) => 
+    String(a.roomNumber).localeCompare(String(b.roomNumber), undefined, { numeric: true, sensitivity: 'base' })
+  );
 
   const indexOfLastRoom = currentPage * roomsPerPage;
   const indexOfFirstRoom = indexOfLastRoom - roomsPerPage;
   const currentRooms = filteredRooms.slice(indexOfFirstRoom, indexOfLastRoom);
   const totalPages = Math.ceil(filteredRooms.length / roomsPerPage);
+
+  // Auto-adjust page if current page exceeds total pages after deleting items
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -348,18 +388,41 @@ const RoomsManagement = () => {
 
               <div className="p-6">
                 {selectedRoomDetails.occupantDetails && selectedRoomDetails.occupantDetails.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {selectedRoomDetails.occupantDetails.map((student) => (
-                      <div key={student._id} className="flex items-center gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
-                          {student.name ? student.name.charAt(0) : 'U'}
+                      <div key={student._id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-border/50">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {student.photo ? (
+                            <img 
+                              src={student.photo} 
+                              alt={student.name} 
+                              className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold shrink-0">
+                              {student.name ? student.name.charAt(0) : 'U'}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold leading-none truncate text-foreground" title={`${student.name || ''} ${student.surname || ''}`.trim()}>
+                              {student.name} {student.surname}
+                            </p>
+                            <p className="text-xs text-black/50 dark:text-white/50 mt-1 truncate">
+                              ID: {student.studentId} {student.phone ? `• Ph: ${student.phone}` : ''}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold leading-none">{student.name} {student.surname}</p>
-                          <p className="text-xs text-black/50 dark:text-white/50 mt-1">
-                            ID: {student.studentId} {student.phone ? `• Ph: ${student.phone}` : ''}
-                          </p>
-                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveStudentFromRoom(student._id, `${student.name || ''} ${student.surname || ''}`.trim(), selectedRoomDetails.roomNumber)}
+                          className="text-xs gap-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/40 shrink-0"
+                          title="Remove student from this room"
+                        >
+                          <UserMinus className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </Button>
                       </div>
                     ))}
                   </div>

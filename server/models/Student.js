@@ -24,6 +24,9 @@ const studentSchema = new mongoose.Schema({
   course: { type: String },
   year: { type: String },
   roomNumber: { type: String },
+  deposit: { type: Number, default: 0 },
+  monthlyFee: { type: Number, default: 6000 },
+  feeDueDay: { type: Number, default: 10 },
   joiningDate: { type: Date, default: Date.now },
   status: { type: String, enum: ['Active', 'Away', 'Left'], default: 'Active' },
 }, { timestamps: true });

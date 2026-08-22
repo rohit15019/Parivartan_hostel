@@ -11,6 +11,10 @@ const LeaveRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state (6 requests per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 6;
+
   useEffect(() => {
     const fetchLeaveRequests = async () => {
       try {
@@ -19,7 +23,8 @@ const LeaveRequests = () => {
         // Map backend data to UI expected format
         const formattedData = data.map(req => ({
           id: req._id,
-          name: req.studentId?.name || 'Unknown Student',
+          name: req.studentId ? `${req.studentId.name}${req.studentId.surname ? ' ' + req.studentId.surname : ''}` : 'Unknown Student',
+          photo: req.studentId?.photo || '',
           room: req.studentId?.roomNumber || 'N/A',
           from: new Date(req.fromDate).toLocaleDateString(),
           to: new Date(req.toDate).toLocaleDateString(),
@@ -60,7 +65,33 @@ const LeaveRequests = () => {
     }
   };
 
+  // Reset to page 1 whenever the filter tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
   const filteredRequests = requests.filter(req => req.status === filter);
+  const totalPages = Math.ceil(filteredRequests.length / requestsPerPage);
+  const indexOfLastRequest = currentPage * requestsPerPage;
+  const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+  const currentRequests = filteredRequests.slice(indexOfFirstRequest, indexOfLastRequest);
+
+  // Clamp current page if total pages decrease
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const getTabCount = (statusKey) => requests.filter(r => r.status === statusKey).length;
 
   return (
     <div className="space-y-6">
@@ -72,7 +103,7 @@ const LeaveRequests = () => {
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${filter === f ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
             onClick={() => setFilter(f)}
           >
-            {f.charAt(0) + f.slice(1).toLowerCase()}
+            {f.charAt(0) + f.slice(1).toLowerCase()} ({getTabCount(f)})
           </button>
         ))}
       </div>
@@ -82,21 +113,29 @@ const LeaveRequests = () => {
           <div className="col-span-full py-12 text-center flex flex-col items-center justify-center">
              <p className="text-lg font-medium text-black/50 dark:text-white/50">Loading leave requests...</p>
           </div>
-        ) : filteredRequests.map((request, idx) => (
-          <motion.div key={request.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
+        ) : currentRequests.map((request, idx) => (
+          <motion.div key={request.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
             <Card className="h-full flex flex-col">
               <CardHeader className="pb-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold">
-                      {request.name.charAt(0)}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{request.name}</CardTitle>
-                      <p className="text-sm text-black/50 dark:text-white/50">Room {request.room}</p>
+                <div className="flex justify-between items-start gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {request.photo ? (
+                      <img 
+                        src={request.photo} 
+                        alt={request.name} 
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                        {request.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg truncate block" title={request.name}>{request.name}</CardTitle>
+                      <p className="text-sm text-black/50 dark:text-white/50 truncate">Room {request.room}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {request.status === 'PENDING' && <Badge variant="warning">🟡 PENDING</Badge>}
                     {request.status === 'APPROVED' && <Badge variant="success">🟢 APPROVED</Badge>}
                     {request.status === 'DENIED' && <Badge variant="danger">🔴 DENIED</Badge>}
@@ -122,7 +161,7 @@ const LeaveRequests = () => {
                   
                   <div>
                     <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-1">Reason:</p>
-                    <p className="text-sm p-3 border border-border rounded-lg bg-card text-black/80 dark:text-white/80">
+                    <p className="text-sm p-3 border border-border rounded-lg bg-card text-black/80 dark:text-white/80 whitespace-pre-wrap break-words [overflow-wrap:anywhere] max-h-36 overflow-y-auto">
                       "{request.reason}"
                     </p>
                   </div>
@@ -148,6 +187,20 @@ const LeaveRequests = () => {
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border mt-6">
+          <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+            Previous
+          </Button>
+          <span className="text-sm text-black/60 dark:text-white/60 font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

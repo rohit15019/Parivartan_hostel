@@ -7,7 +7,7 @@ const Student = require('../models/Student');
 const getLeaveRequests = async (req, res) => {
   try {
     const leaves = await LeaveRequest.find({})
-      .populate('studentId', 'name studentId roomNumber')
+      .populate('studentId', 'name surname studentId roomNumber photo')
       .sort({ createdAt: -1 });
     res.json(leaves);
   } catch (error) {

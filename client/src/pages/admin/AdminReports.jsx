@@ -138,9 +138,9 @@ const AdminReports = () => {
                     }}
                   >
                     <CardContent className="p-3 sm:p-4 flex-1 flex flex-col relative">
-                      <div className="flex justify-between items-start mb-1 pr-6">
-                        <h3 className="font-semibold text-base line-clamp-1">{report.title}</h3>
-                        <div className="flex items-center gap-2">
+                      <div className="flex justify-between items-start gap-2 mb-1">
+                        <h3 className="font-semibold text-base truncate break-words min-w-0 flex-1" title={report.title}>{report.title}</h3>
+                        <div className="flex items-center gap-1.5 shrink-0">
                           {getStatusBadge(report.status)}
                           <button
                             onClick={(e) => handleDelete(report._id, e)}
@@ -151,13 +151,25 @@ const AdminReports = () => {
                           </button>
                         </div>
                       </div>
-                      <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-col gap-y-1">
-                        <span>By: {report.studentId?.name} {report.studentId?.surname} ({report.studentId?.studentId})</span>
-                        <span>Room: {report.studentId?.roomNumber || 'N/A'}</span>
-                        <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
+                      <div className="flex items-center gap-2.5 mb-2">
+                        {report.studentId?.photo ? (
+                          <img 
+                            src={report.studentId.photo} 
+                            alt={report.studentId.name} 
+                            className="w-8 h-8 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-xs shrink-0">
+                            {(report.studentId?.name || 'U').charAt(0)}
+                          </div>
+                        )}
+                        <div className="text-xs text-black/60 dark:text-white/60 min-w-0">
+                          <p className="font-semibold text-foreground truncate">{report.studentId?.name} {report.studentId?.surname}</p>
+                          <p className="text-[11px] text-black/50 dark:text-white/50">Room {report.studentId?.roomNumber || 'N/A'} • {new Date(report.createdAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
                       <div className="flex-1 overflow-hidden mt-auto">
-                        <p className="text-sm line-clamp-3 bg-black/5 dark:bg-white/5 p-2 rounded-md h-full">
+                        <p className="text-sm line-clamp-3 bg-black/5 dark:bg-white/5 p-2 rounded-md h-full break-words [overflow-wrap:anywhere]">
                           {report.description}
                         </p>
                       </div>
@@ -184,19 +196,37 @@ const AdminReports = () => {
         <div className="lg:col-span-1">
           {selectedReport ? (
             <Card className="sticky top-24">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle>Report Details</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg mb-1">{selectedReport.title}</h3>
-                  <div className="text-sm text-black/60 dark:text-white/60 flex gap-x-4 mb-2">
-                    <span>{selectedReport.studentId?.name}</span>
-                    <span>Room: {selectedReport.studentId?.roomNumber}</span>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg max-h-20 overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] pr-1 mb-2">
+                    {selectedReport.title}
+                  </h3>
+                  <div className="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border/50">
+                    {selectedReport.studentId?.photo ? (
+                      <img 
+                        src={selectedReport.studentId.photo} 
+                        alt={selectedReport.studentId.name} 
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                        {(selectedReport.studentId?.name || 'U').charAt(0)}
+                      </div>
+                    )}
+                    <div className="text-sm min-w-0 flex-1">
+                      <p className="font-bold text-foreground truncate">{selectedReport.studentId?.name} {selectedReport.studentId?.surname}</p>
+                      <p className="text-xs text-black/50 dark:text-white/50">Room {selectedReport.studentId?.roomNumber || 'N/A'} • {new Date(selectedReport.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                  <p className="text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap max-h-40 overflow-y-auto">
-                    {selectedReport.description}
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-black/50 dark:text-white/50 mb-1">Description:</p>
+                    <p className="text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap break-words [overflow-wrap:anywhere] max-h-36 overflow-y-auto border border-border/50">
+                      {selectedReport.description}
+                    </p>
+                  </div>
                 </div>
                 <form onSubmit={handleUpdate} className="space-y-4 border-t pt-4 border-border">
                   <div>
@@ -219,7 +249,7 @@ const AdminReports = () => {
                     <textarea
                       id="adminReportNotes"
                       name="adminReportNotes"
-                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[100px] resize-y"
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}
                       placeholder="Add a response or internal note..."

@@ -1,6 +1,8 @@
 const Student = require('../models/Student');
 const User = require('../models/User');
 const Fee = require('../models/Fee');
+const MonthlyFee = require('../models/MonthlyFee');
+const { ensureMonthlyFeesForStudent } = require('./feeController');
 const bcrypt = require('bcrypt');
 
 // @desc    Get all students
@@ -33,12 +35,40 @@ const getStudents = async (req, res) => {
 // @access  Private/Student
 const getStudentProfile = async (req, res) => {
   try {
-    const student = await Student.findOne({ userId: req.user._id });
+    const student = await Student.findOne({ userId: req.user._id }).populate('userId', 'email');
     if (student) {
       res.json(student);
     } else {
       res.status(404).json({ message: 'Student profile not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Upload or update student profile photo
+// @route   PUT /api/students/profile/photo
+// @access  Private/Student
+const uploadStudentPhoto = async (req, res) => {
+  try {
+    const { photo } = req.body;
+    if (!photo) {
+      return res.status(400).json({ message: 'No photo data provided' });
+    }
+
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({ message: 'Student profile not found' });
+    }
+
+    student.photo = photo;
+    await student.save();
+
+    res.json({
+      message: 'Profile photo updated successfully',
+      photo: student.photo,
+      student
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,7 +82,8 @@ const createStudent = async (req, res) => {
     studentId, surname, name, email, password, phone,
     fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school,
     college, course, year, roomNumber,
-    totalFees, paymentFrequency, dueDate
+    totalFees, paymentFrequency, dueDate,
+    deposit, monthlyFee, feeDueDay
   } = req.body;
 
   let createdUser = null;
@@ -67,6 +98,15 @@ const createStudent = async (req, res) => {
     // Default password if missing
     if (!password) {
       password = 'password123';
+    }
+
+    // Check if a student with this mobile number already exists
+    if (phone) {
+      const cleanPhone = phone.trim();
+      const existingStudentPhone = await Student.findOne({ phone: cleanPhone });
+      if (existingStudentPhone) {
+        return res.status(400).json({ message: 'A student with this mobile number already exists' });
+      }
     }
 
     // 1. Create User
@@ -135,24 +175,22 @@ const createStudent = async (req, res) => {
       pincode: pincode || '',
       school,
       college: college || '',
-      course: course || 'B.Tech',
+      course: course || '',
       year: year || '1st Year',
-      roomNumber
+      roomNumber,
+      deposit: Number(deposit) || 0,
+      monthlyFee: Number(monthlyFee) || 6000,
+      feeDueDay: Number(feeDueDay) || 10
     });
 
     // Link student to user
     createdUser.studentId = createdStudent._id;
     await createdUser.save();
 
-    // 3. Create initial Fee record
-    const fee = await Fee.create({
-      studentId: createdStudent._id,
-      totalFees: totalFees || 60000,
-      paymentFrequency: paymentFrequency || 'Yearly',
-      dueDate: dueDate || null
-    });
+    // 3. Ensure monthly fee records and sync
+    const feeSync = await ensureMonthlyFeesForStudent(createdStudent._id);
 
-    res.status(201).json({ student: createdStudent, fee });
+    res.status(201).json({ student: createdStudent, fee: feeSync?.monthlyFees?.[0] || null });
   } catch (error) {
     // Rollback created user and student if an error occurs
     if (createdUser) {
@@ -177,8 +215,19 @@ const updateStudent = async (req, res) => {
     }
 
     const {
-      surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status
+      email, surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status,
+      deposit, monthlyFee, feeDueDay
     } = req.body;
+
+    // Handle email update on associated User model
+    if (email && student.userId) {
+      const emailLower = email.trim().toLowerCase();
+      const existingUser = await User.findOne({ email: emailLower, _id: { $ne: student.userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email address is already in use by another account' });
+      }
+      await User.findByIdAndUpdate(student.userId, { email: emailLower });
+    }
 
     if (roomNumber !== undefined && roomNumber !== student.roomNumber) {
       const Room = require('../models/Room');
@@ -196,7 +245,16 @@ const updateStudent = async (req, res) => {
 
     if (surname !== undefined) student.surname = surname;
     if (name !== undefined) student.name = name;
-    if (phone !== undefined) student.phone = phone;
+    if (phone !== undefined) {
+      const cleanPhone = phone.trim();
+      if (cleanPhone !== student.phone) {
+        const existingStudentPhone = await Student.findOne({ phone: cleanPhone, _id: { $ne: student._id } });
+        if (existingStudentPhone) {
+          return res.status(400).json({ message: 'A student with this mobile number already exists' });
+        }
+      }
+      student.phone = cleanPhone;
+    }
     if (fatherName !== undefined) student.fatherName = fatherName;
     if (fatherPhone !== undefined) student.fatherPhone = fatherPhone;
     if (motherPhone !== undefined) student.motherPhone = motherPhone;
@@ -210,10 +268,26 @@ const updateStudent = async (req, res) => {
     if (course !== undefined) student.course = course;
     if (year !== undefined) student.year = year;
     if (status !== undefined) student.status = status;
+    if (deposit !== undefined) student.deposit = Number(deposit) || 0;
+    if (monthlyFee !== undefined && Number(monthlyFee) > 0) student.monthlyFee = Number(monthlyFee);
+    if (feeDueDay !== undefined) student.feeDueDay = Math.min(28, Math.max(1, Number(feeDueDay)));
 
-    const updatedStudent = await student.save();
+    await student.save();
 
-    res.json(updatedStudent);
+    // Sync monthly fees if fee rate changed
+    await ensureMonthlyFeesForStudent(student._id);
+
+    const updatedPopulated = await Student.findById(student._id).populate({
+      path: 'userId',
+      select: 'email role'
+    });
+
+    const fee = await Fee.findOne({ studentId: student._id });
+
+    res.json({
+      ...updatedPopulated._doc,
+      fee: fee || null
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -235,7 +309,8 @@ const deleteStudent = async (req, res) => {
       await User.findByIdAndDelete(student.userId);
     }
 
-    // Delete associated Fee
+    // Delete associated MonthlyFees & Fees
+    await MonthlyFee.deleteMany({ studentId: student._id });
     await Fee.findOneAndDelete({ studentId: student._id });
 
     // Delete associated Payments and Leave Requests
@@ -253,4 +328,4 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-module.exports = { getStudents, getStudentProfile, createStudent, updateStudent, deleteStudent };
+module.exports = { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, deleteStudent };

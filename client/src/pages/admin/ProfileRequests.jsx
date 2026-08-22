@@ -124,12 +124,25 @@ const ProfileRequests = () => {
                           </button>
                         </div>
                       </div>
-                      <div className="text-xs text-black/60 dark:text-white/60 mb-2 flex flex-col gap-y-1">
-                        <span>By: {req.studentId?.name} {req.studentId?.surname} ({req.studentId?.studentId})</span>
-                        <span>Date: {new Date(req.createdAt).toLocaleDateString()}</span>
+                      <div className="flex items-center gap-2.5 mb-2">
+                        {req.studentId?.photo ? (
+                          <img 
+                            src={req.studentId.photo} 
+                            alt={req.studentId.name} 
+                            className="w-8 h-8 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-xs shrink-0">
+                            {(req.studentId?.name || 'U').charAt(0)}
+                          </div>
+                        )}
+                        <div className="text-xs text-black/60 dark:text-white/60 min-w-0">
+                          <p className="font-semibold text-foreground truncate">{req.studentId?.name} {req.studentId?.surname}</p>
+                          <p className="text-[11px] text-black/50 dark:text-white/50">{req.studentId?.studentId} • {new Date(req.createdAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
                       <div className="flex-1 overflow-hidden mt-auto">
-                        <p className="text-sm line-clamp-3 bg-black/5 dark:bg-white/5 p-2 rounded-md h-full">
+                        <p className="text-sm line-clamp-3 bg-black/5 dark:bg-white/5 p-2 rounded-md h-full break-words [overflow-wrap:anywhere]">
                           {req.requestText}
                         </p>
                       </div>
@@ -156,17 +169,30 @@ const ProfileRequests = () => {
         <div className="lg:col-span-1">
           {selectedRequest ? (
             <Card className="sticky top-24">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle>Request Details</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg mb-1">Change Request</h3>
-                  <div className="text-sm text-black/60 dark:text-white/60 flex flex-col gap-y-1 mb-2">
-                    <span>{selectedRequest.studentId?.name} {selectedRequest.studentId?.surname}</span>
-                    <span>ID: {selectedRequest.studentId?.studentId}</span>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2 break-words [overflow-wrap:anywhere]">Change Request</h3>
+                  <div className="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-border/50">
+                    {selectedRequest.studentId?.photo ? (
+                      <img 
+                        src={selectedRequest.studentId.photo} 
+                        alt={selectedRequest.studentId.name} 
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                        {(selectedRequest.studentId?.name || 'U').charAt(0)}
+                      </div>
+                    )}
+                    <div className="text-sm min-w-0 flex-1">
+                      <p className="font-bold text-foreground truncate">{selectedRequest.studentId?.name} {selectedRequest.studentId?.surname}</p>
+                      <p className="text-xs text-black/50 dark:text-white/50">ID: {selectedRequest.studentId?.studentId} • Room {selectedRequest.studentId?.roomNumber || 'N/A'}</p>
+                    </div>
                   </div>
-                  <p className="text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap max-h-40 overflow-y-auto border border-border">
+                  <p className="text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap break-words [overflow-wrap:anywhere] max-h-36 overflow-y-auto border border-border">
                     {selectedRequest.requestText}
                   </p>
                 </div>

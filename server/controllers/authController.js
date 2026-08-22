@@ -33,10 +33,20 @@ const authUser = async (req, res) => {
       }
 
       let name = user.email.split('@')[0]; // fallback
-      if (user.role === 'student' && user.studentId) {
+      let photo = '';
+      if (user.role === 'student') {
         const Student = require('../models/Student');
-        const student = await Student.findById(user.studentId);
-        if (student) name = student.name + (student.surname ? ` ${student.surname}` : '');
+        let student = null;
+        if (user.studentId) {
+          student = await Student.findById(user.studentId);
+        }
+        if (!student) {
+          student = await Student.findOne({ userId: user._id });
+        }
+        if (student) {
+          name = `${student.name}${student.surname ? ` ${student.surname}` : ''}`.trim();
+          photo = student.photo || '';
+        }
       } else if (user.role === 'admin') {
         name = 'Admin Sir';
       }
@@ -45,6 +55,7 @@ const authUser = async (req, res) => {
         _id: user._id,
         email: user.email,
         name: name,
+        photo: photo,
         role: user.role,
         studentId: user.studentId,
         token: generateToken(user._id),

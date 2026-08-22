@@ -8,36 +8,42 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [loading, setLoading] = useState(true);
-
-  // Restore user from token on load (basic implementation - normally you'd fetch /api/auth/me)
-  useEffect(() => {
-    if (token) {
-      try {
-        // In a real app, you'd fetch the user profile here to restore state.
-        // Since we don't have a /api/auth/me, we'll extract basic info if available in localStorage
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          
-          // If this is an old session without the name, fetch it
-          if (parsedUser.role === 'student' && !parsedUser.name) {
-            api.get('/students/profile').then(res => {
-              const updatedUser = { ...parsedUser, name: res.data.name };
-              setUser(updatedUser);
-              localStorage.setItem('user', JSON.stringify(updatedUser));
-            }).catch(console.error);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to restore session", e);
-        logout();
-      }
+  const [token, setToken] = useState(() => localStorage.getItem('token') || null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
     }
-    setLoading(false);
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Sync profile details (name, photo) in background when logged in as student
+  useEffect(() => {
+    if (token && user?.role === 'student') {
+      api.get('/students/profile')
+        .then(res => {
+          if (res.data) {
+            const fullName = `${res.data.name || ''}${res.data.surname ? ' ' + res.data.surname : ''}`.trim();
+            setUser(prev => {
+              if (!prev) return prev;
+              const nextUser = {
+                ...prev,
+                name: fullName || prev.name,
+                photo: res.data.photo || prev.photo || '',
+              };
+              localStorage.setItem('user', JSON.stringify(nextUser));
+              return nextUser;
+            });
+          }
+        })
+        .catch(err => {
+          if (err.response?.status === 401) {
+            logout();
+          }
+        });
+    }
   }, [token]);
 
   const login = async (email, password, role) => {
@@ -56,6 +62,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedFields) => {
+    setUser(prev => {
+      const nextUser = { ...prev, ...updatedFields };
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -67,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     login,
+    updateUser,
     logout,
     loading
   };

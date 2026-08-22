@@ -38,6 +38,7 @@ const StudentReports = () => {
       setTitle('');
       setDescription('');
       setShowForm(false);
+      setCurrentPage(1);
       fetchReports();
     } catch (error) {
       console.error('Error submitting report:', error);
@@ -58,6 +59,13 @@ const StudentReports = () => {
   const indexOfFirstReport = indexOfLastReport - reportsPerPage;
   const currentReports = reports.slice(indexOfFirstReport, indexOfLastReport);
   const totalPages = Math.ceil(reports.length / reportsPerPage);
+
+  // Auto-adjust page if current page exceeds total pages after deleting items
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -116,7 +124,7 @@ const StudentReports = () => {
         </Card>
       )}
 
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {loading ? (
           <p>Loading reports...</p>
         ) : reports.length === 0 ? (
@@ -130,26 +138,35 @@ const StudentReports = () => {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {currentReports.map((report) => (
-                <Card key={report._id} className="aspect-square flex flex-col justify-between">
-                  <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-base line-clamp-1">{report.title}</h3>
-                        <p className="text-xs text-black/60 dark:text-white/60">
-                          Submitted on {new Date(report.createdAt).toLocaleDateString()}
+                <Card key={report._id} className="flex flex-col justify-between overflow-hidden">
+                  <CardContent className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-base truncate break-words" title={report.title}>
+                            {report.title}
+                          </h3>
+                          <p className="text-xs text-black/60 dark:text-white/60 mt-0.5">
+                            Submitted on {new Date(report.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="shrink-0">
+                          {getStatusBadge(report.status)}
+                        </div>
+                      </div>
+
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-black/50 dark:text-white/50 mb-1">Description:</p>
+                        <p className="text-sm bg-black/5 dark:bg-white/5 p-2.5 rounded-lg max-h-24 overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-black/80 dark:text-white/80">
+                          {report.description}
                         </p>
                       </div>
-                      {getStatusBadge(report.status)}
                     </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="text-sm bg-black/5 dark:bg-white/5 p-2 rounded-md mb-2 line-clamp-3 h-full">
-                        {report.description}
-                      </p>
-                    </div>
+
                     {report.adminNotes && (
-                      <div className="mt-2 border-l-2 border-primary-500 pl-3">
+                      <div className="mt-2 border-l-2 border-primary-500 pl-3 py-1 bg-primary-50/50 dark:bg-primary-950/20 rounded-r-md">
                         <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-0.5">Admin Response:</p>
-                        <p className="text-sm line-clamp-2">{report.adminNotes}</p>
+                        <p className="text-sm max-h-20 overflow-y-auto break-words [overflow-wrap:anywhere] text-black/80 dark:text-white/80">{report.adminNotes}</p>
                       </div>
                     )}
                   </CardContent>
@@ -157,17 +174,19 @@ const StudentReports = () => {
               ))}
             </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">
-              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
-                Previous
-              </Button>
-              <span className="text-sm">Page {currentPage} of {totalPages}</span>
-              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Next
-              </Button>
-            </div>
-          )}
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 bg-card p-3 rounded-xl border border-border">
+                <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                  Previous
+                </Button>
+                <span className="text-sm text-black/60 dark:text-white/60 font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                  Next
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

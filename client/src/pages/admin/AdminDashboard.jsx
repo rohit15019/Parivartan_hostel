@@ -51,7 +51,8 @@ const AdminDashboard = () => {
         // Format recent payments for the UI
         const formattedPayments = (data.recentPayments || []).map((payment, idx) => ({
           id: payment._id || idx,
-          name: payment.studentId?.name || 'Unknown',
+          name: payment.studentId ? `${payment.studentId.name}${payment.studentId.surname ? ' ' + payment.studentId.surname : ''}` : 'Unknown',
+          photo: payment.studentId?.photo || '',
           room: payment.studentId?.roomNumber || 'N/A',
           amount: `₹${payment.amount.toLocaleString()}`,
           date: new Date(payment.paymentDate).toLocaleDateString(),
@@ -86,14 +87,21 @@ const AdminDashboard = () => {
   const stats = [
     { title: "Total Students", value: statsData?.totalStudents || 0, icon: Users, colorClass: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400", path: "/admin/students" },
     { 
-      title: "Fees Collected", 
-      value: `₹${displayedFees.toLocaleString()}`, 
+      title: "This Month Collected", 
+      value: `₹${(statsData?.currentMonthFeesCollected || 0).toLocaleString()}`, 
       icon: IndianRupee, 
-      subtitle: `Year ${activeYear} Received`, 
+      subtitle: `${statsData?.currentMonthName || 'Current Month'} Received`, 
       colorClass: "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400", 
       path: "/admin/history" 
     },
-    { title: "Pending Reports", value: statsData?.pendingReports || 0, icon: FileText, subtitle: "Unresolved", colorClass: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400", path: "/admin/reports" },
+    { 
+      title: "Total Pending Dues", 
+      value: `₹${(statsData?.totalPendingDues || 0).toLocaleString()}`, 
+      icon: IndianRupee, 
+      subtitle: (statsData?.totalPendingArrears || 0) > 0 ? `₹${statsData.totalPendingArrears.toLocaleString()} in Past Arrears` : 'All Current', 
+      colorClass: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400", 
+      path: "/admin/fees" 
+    },
     { title: "Leave Requests", value: statsData?.pendingLeaves || 0, icon: CalendarDays, subtitle: "Pending Approval", colorClass: "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400", path: "/admin/leaves" },
   ];
 
@@ -200,17 +208,25 @@ const AdminDashboard = () => {
                 ) : recentPayments.length === 0 ? (
                   <p className="text-center text-sm text-black/50 dark:text-white/50 py-4">No recent payments found.</p>
                 ) : recentPayments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold">
-                        {payment.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-medium leading-none">{payment.name}</p>
-                        <p className="text-sm text-black/50 dark:text-white/50 mt-1">Room {payment.room} • {payment.date}</p>
+                  <div key={payment.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {payment.photo ? (
+                        <img 
+                          src={payment.photo} 
+                          alt={payment.name} 
+                          className="w-10 h-10 rounded-full object-cover border border-border shrink-0 shadow-xs" 
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                          {payment.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium leading-none truncate" title={payment.name}>{payment.name}</p>
+                        <p className="text-sm text-black/50 dark:text-white/50 mt-1 truncate">Room {payment.room} • {payment.date}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="font-semibold text-green-600 dark:text-green-400">{payment.amount}</p>
                       <p className="text-xs font-medium text-black/50 dark:text-white/50 mt-1">{payment.status}</p>
                     </div>

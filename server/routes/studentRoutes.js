@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getStudents, getStudentProfile, createStudent, updateStudent, deleteStudent } = require('../controllers/studentController');
+const { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, deleteStudent } = require('../controllers/studentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/profile')
   .get(protect, getStudentProfile);
+
+router.route('/profile/photo')
+  .put(protect, uploadStudentPhoto);
 
 router.route('/')
   .get(protect, admin, getStudents)

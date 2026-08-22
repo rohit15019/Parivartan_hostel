@@ -50,7 +50,7 @@ exports.getMyRequests = async (req, res) => {
 exports.getAllRequests = async (req, res) => {
   try {
     const requests = await ProfileRequest.find()
-      .populate('studentId', 'name surname studentId roomNumber')
+      .populate('studentId', 'name surname studentId roomNumber photo')
       .sort('-createdAt');
     res.json(requests);
   } catch (error) {

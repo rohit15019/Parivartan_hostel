@@ -50,7 +50,7 @@ const getMyReports = async (req, res) => {
 const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find({})
-      .populate('studentId', 'name surname studentId roomNumber')
+      .populate('studentId', 'name surname studentId roomNumber photo')
       .sort({ createdAt: -1 });
     res.json(reports);
   } catch (error) {
