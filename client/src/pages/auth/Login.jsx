@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
+import logoImg from '../../assets/logo.png';
 import eventTrainingImg from '../../assets/event_training.jpg';
 import hostelCampusImg from '../../assets/hostel_campus.jpg';
 import hostelBuildingImg from '../../assets/hostel_building.jpg';
@@ -103,13 +104,16 @@ const Login = () => {
                 </button>
               </div>
               
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/15 text-primary-300">
-                  <Building2 className="w-7 h-7" />
+              <div className="flex items-center gap-3.5 mb-2">
+                <div className="w-14 h-14 rounded-2xl bg-white p-1 shadow-lg shrink-0 flex items-center justify-center border border-white/20">
+                  <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain" />
                 </div>
-                <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight">
-                  Welcome to Parivartan Hostel
-                </h1>
+                <div>
+                  <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight">
+                    Parivartan Hostel
+                  </h1>
+                  <p className="text-xs text-primary-200 font-medium mt-0.5">Surendranagar, Gujarat • Est. 2012</p>
+                </div>
               </div>
             </div>
 
@@ -302,11 +306,14 @@ const Login = () => {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
-          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-             <div className="p-3 bg-primary-100 dark:bg-primary-900/50 rounded-xl">
-                <Building2 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Parivartan</h1>
+          <div className="flex flex-col items-center gap-2 mb-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 p-1.5 shadow-md border border-border flex items-center justify-center">
+              <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain rounded-xl" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Parivartan Hostel</h1>
+              <p className="text-xs text-black/50 dark:text-white/50">Hostel Management Portal</p>
+            </div>
           </div>
 
           <Card className="border-none shadow-xl bg-white/50 dark:bg-black/20 backdrop-blur-xl">

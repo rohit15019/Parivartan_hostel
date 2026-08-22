@@ -4,6 +4,7 @@ import { Building2, Menu, X, LogOut, Palette, ChevronDown, User, Shield } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import logoImg from '../../assets/logo.png';
 
 const AshokaChakra = () => (
   <svg viewBox="0 0 100 100" className="w-6 h-6 text-[#000080] animate-[spin_10s_linear_infinite]">
@@ -90,11 +91,20 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
       <motion.aside
         className={`fixed lg:static inset-y-0 left-0 z-50 w-[80%] sm:w-[300px] lg:w-[20%] lg:min-w-[250px] lg:max-w-[300px] xl:w-[15%] border-r transform transition-all duration-300 lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col ${currentColor.classes}`}
       >
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-white/10 dark:border-white/10">
-          <div className={`p-2 rounded-lg ${currentColor.iconClass}`}>
-            {currentColor.isIndia ? <AshokaChakra /> : <Building2 className="w-6 h-6" />}
+        <div className="h-16 flex items-center gap-3 px-5 border-b border-white/10 dark:border-white/10">
+          {currentColor.isIndia ? (
+            <div className={`p-2 rounded-lg ${currentColor.iconClass}`}>
+              <AshokaChakra />
+            </div>
+          ) : (
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm shrink-0 flex items-center justify-center">
+              <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain" />
+            </div>
+          )}
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-lg tracking-tight leading-tight">Parivartan</span>
+            <span className="text-[10px] opacity-75 font-medium tracking-wide leading-none">Hostel Portal</span>
           </div>
-          <span className="font-bold text-xl tracking-tight">Parivartan</span>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -130,13 +140,19 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Navbar */}
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 z-30 shadow-sm dark:shadow-none glass sticky top-0">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               className="lg:hidden p-2 -ml-2 rounded-md text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
             </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-white p-0.5 shadow-xs border border-border flex items-center justify-center">
+                <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-bold text-base tracking-tight">Parivartan</span>
+            </div>
             <h2 className="hidden sm:block text-lg font-semibold tracking-tight">
               {userRole === 'admin' ? 'Hostel Administration' : 'Student Portal'}
             </h2>

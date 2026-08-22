@@ -28,6 +28,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { useTheme } from '../../context/ThemeContext';
 
 // Import hostel photos from assets
+import logoImg from '../../assets/logo.png';
 import eventTrainingImg from '../../assets/event_training.jpg';
 import hostelCampusImg from '../../assets/hostel_campus.jpg';
 import hostelBuildingImg from '../../assets/hostel_building.jpg';
@@ -121,8 +122,8 @@ const AboutUs = () => {
             onClick={() => navigate('/login')} 
             className="flex items-center gap-3 cursor-pointer group"
           >
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white shadow-md group-hover:scale-105 transition-transform">
-              <Building2 className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-white p-1 shadow-md border border-border group-hover:scale-105 transition-transform flex items-center justify-center shrink-0">
+              <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain rounded-xl" />
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-tight block text-foreground leading-none">
@@ -144,9 +145,10 @@ const AboutUs = () => {
             </button>
             <Button 
               onClick={() => navigate('/login')} 
-              className="gap-2 shadow-md rounded-xl font-semibold text-sm"
+              className="gap-2 font-bold shadow-md shadow-primary-500/20"
             >
-              <LogIn className="w-4 h-4" /> Sign In to Portal
+              <LogIn className="w-4 h-4" />
+              <span>Student / Admin Portal</span>
             </Button>
           </div>
         </div>
@@ -155,7 +157,7 @@ const AboutUs = () => {
       {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-14 pb-20 lg:pt-20 lg:pb-24 bg-gradient-to-b from-primary-50/50 via-background to-background dark:from-primary-950/20 dark:via-background dark:to-background border-b border-border/50">
+        <section className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-24 bg-gradient-to-b from-primary-50/50 via-background to-background dark:from-primary-950/20 dark:via-background dark:to-background border-b border-border/50">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-r from-primary-500/10 to-indigo-500/10 blur-3xl pointer-events-none -z-10"></div>
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -165,6 +167,12 @@ const AboutUs = () => {
               transition={{ duration: 0.6 }}
               className="space-y-6"
             >
+              <div className="flex justify-center">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white p-2 shadow-xl border border-border/80 flex items-center justify-center">
+                  <img src={logoImg} alt="Parivartan Hostel Logo" className="w-full h-full object-contain rounded-2xl" />
+                </div>
+              </div>
+
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 text-xs font-bold uppercase tracking-wider border border-primary-200 dark:border-primary-800/60 shadow-xs">
                 <Sparkles className="w-3.5 h-3.5" /> About Us • Established in 2012
               </div>
