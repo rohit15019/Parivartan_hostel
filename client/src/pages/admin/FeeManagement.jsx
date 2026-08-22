@@ -57,6 +57,10 @@ const FeeManagement = () => {
     feeDueDay: 10
   });
 
+  // Refresh all students fees state
+  const [refreshingAll, setRefreshingAll] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState(null);
+
   // Fetch all student fees for sidebar
   const fetchAllStudentFees = async () => {
     try {
@@ -73,6 +77,25 @@ const FeeManagement = () => {
       console.error('Failed to fetch student fees:', error);
     } finally {
       setStudentsLoading(false);
+    }
+  };
+
+  const handleRefreshAllFees = async () => {
+    setRefreshingAll(true);
+    setRefreshMessage(null);
+    try {
+      const res = await api.post('/fees/auto-renew');
+      await fetchAllStudentFees();
+      if (selectedStudentId) {
+        await fetchStudentFeeDetails(selectedStudentId);
+      }
+      setRefreshMessage(res.data?.message || 'Monthly fees refreshed for all students successfully!');
+      setTimeout(() => setRefreshMessage(null), 5000);
+    } catch (error) {
+      console.error('Failed to refresh fees for all students:', error);
+      alert(error.response?.data?.message || 'Failed to refresh fees');
+    } finally {
+      setRefreshingAll(false);
     }
   };
 
@@ -213,6 +236,28 @@ const FeeManagement = () => {
           <p className="text-xs text-primary-100/80 mt-0.5">
             Automatic monthly fee renewals with full previous unpaid dues calculation and tracking.
           </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+          {refreshMessage && (
+            <motion.span 
+              initial={{ opacity: 0, y: -5 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="text-xs px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> {refreshMessage}
+            </motion.span>
+          )}
+
+          <Button
+            onClick={handleRefreshAllFees}
+            disabled={refreshingAll}
+            className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl gap-2 font-semibold shadow-sm text-xs sm:text-sm h-10 px-4 cursor-pointer transition-all hover:scale-105"
+            title="Recalculate, generate current month cycles, and refresh fees for all students"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshingAll ? 'animate-spin' : ''}`} />
+            <span>{refreshingAll ? 'Refreshing Fees...' : 'Refresh All Student Fees'}</span>
+          </Button>
         </div>
       </div>
 
