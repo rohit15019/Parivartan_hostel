@@ -3,20 +3,6 @@ node_modules/
 .pnp
 .pnp.js
 
-# Environment Files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-server/.env
-client/.env
-
-# Allow environment templates
-!.env.example
-!server/.env.example
-!client/.env.example
-
 # Build outputs
 dist/
 build/
