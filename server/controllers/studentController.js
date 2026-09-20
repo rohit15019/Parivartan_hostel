@@ -12,7 +12,7 @@ const getStudents = async (req, res) => {
   try {
     const students = await Student.find({}).populate({
       path: 'userId',
-      select: 'email role'
+      select: 'email role rawPassword'
     });
     
     // Attach fee info
@@ -109,6 +109,14 @@ const createStudent = async (req, res) => {
       }
     }
 
+    // Validate required deposit and monthly fee rate
+    if (deposit === undefined || deposit === null || deposit === '' || isNaN(Number(deposit)) || Number(deposit) < 0) {
+      return res.status(400).json({ message: 'Deposit amount is required and must be 0 or greater' });
+    }
+    if (monthlyFee === undefined || monthlyFee === null || monthlyFee === '' || isNaN(Number(monthlyFee)) || Number(monthlyFee) <= 0) {
+      return res.status(400).json({ message: 'Monthly fee rate is required and must be greater than 0' });
+    }
+
     // 1. Create User
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -155,6 +163,7 @@ const createStudent = async (req, res) => {
     createdUser = await User.create({
       email,
       password: hashedPassword,
+      rawPassword: password,
       role: 'student'
     });
 
@@ -178,8 +187,8 @@ const createStudent = async (req, res) => {
       course: course || '',
       year: year || '1st Year',
       roomNumber,
-      deposit: Number(deposit) || 0,
-      monthlyFee: Number(monthlyFee) || 6000,
+      deposit: Number(deposit),
+      monthlyFee: Number(monthlyFee),
       feeDueDay: Number(feeDueDay) || 10
     });
 
@@ -215,18 +224,30 @@ const updateStudent = async (req, res) => {
     }
 
     const {
-      email, surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status,
+      email, password, newPassword, surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status,
       deposit, monthlyFee, feeDueDay
     } = req.body;
 
-    // Handle email update on associated User model
-    if (email && student.userId) {
-      const emailLower = email.trim().toLowerCase();
-      const existingUser = await User.findOne({ email: emailLower, _id: { $ne: student.userId } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email address is already in use by another account' });
+    // Handle email & password updates on associated User model
+    if (student.userId) {
+      const userUpdates = {};
+      if (email) {
+        const emailLower = email.trim().toLowerCase();
+        const existingUser = await User.findOne({ email: emailLower, _id: { $ne: student.userId } });
+        if (existingUser) {
+          return res.status(400).json({ message: 'Email address is already in use by another account' });
+        }
+        userUpdates.email = emailLower;
       }
-      await User.findByIdAndUpdate(student.userId, { email: emailLower });
+      const passToSet = newPassword || password;
+      if (passToSet && passToSet.trim().length >= 4) {
+        const salt = await bcrypt.genSalt(10);
+        userUpdates.password = await bcrypt.hash(passToSet.trim(), salt);
+        userUpdates.rawPassword = passToSet.trim();
+      }
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(student.userId, userUpdates);
+      }
     }
 
     if (roomNumber !== undefined && roomNumber !== student.roomNumber) {
@@ -268,8 +289,18 @@ const updateStudent = async (req, res) => {
     if (course !== undefined) student.course = course;
     if (year !== undefined) student.year = year;
     if (status !== undefined) student.status = status;
-    if (deposit !== undefined) student.deposit = Number(deposit) || 0;
-    if (monthlyFee !== undefined && Number(monthlyFee) > 0) student.monthlyFee = Number(monthlyFee);
+    if (deposit !== undefined) {
+      if (deposit === null || deposit === '' || isNaN(Number(deposit)) || Number(deposit) < 0) {
+        return res.status(400).json({ message: 'Deposit amount is required and must be 0 or greater' });
+      }
+      student.deposit = Number(deposit);
+    }
+    if (monthlyFee !== undefined) {
+      if (monthlyFee === null || monthlyFee === '' || isNaN(Number(monthlyFee)) || Number(monthlyFee) <= 0) {
+        return res.status(400).json({ message: 'Monthly fee rate is required and must be greater than 0' });
+      }
+      student.monthlyFee = Number(monthlyFee);
+    }
     if (feeDueDay !== undefined) student.feeDueDay = Math.min(28, Math.max(1, Number(feeDueDay)));
 
     await student.save();
@@ -279,7 +310,7 @@ const updateStudent = async (req, res) => {
 
     const updatedPopulated = await Student.findById(student._id).populate({
       path: 'userId',
-      select: 'email role'
+      select: 'email role rawPassword'
     });
 
     const fee = await Fee.findOne({ studentId: student._id });
@@ -287,6 +318,46 @@ const updateStudent = async (req, res) => {
     res.json({
       ...updatedPopulated._doc,
       fee: fee || null
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Change student password by admin
+// @route   PUT /api/students/:id/password
+// @access  Private/Admin
+const changeStudentPassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.trim().length < 4) {
+      return res.status(400).json({ message: 'Password must be at least 4 characters long' });
+    }
+
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    if (!student.userId) {
+      return res.status(404).json({ message: 'Associated user account not found' });
+    }
+
+    const user = await User.findById(student.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User account not found' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
+
+    user.password = hashedPassword;
+    user.rawPassword = newPassword.trim();
+    await user.save();
+
+    res.json({
+      message: 'Password updated successfully',
+      rawPassword: user.rawPassword
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -328,4 +399,4 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-module.exports = { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, deleteStudent };
+module.exports = { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, changeStudentPassword, deleteStudent };

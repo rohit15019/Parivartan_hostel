@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Check, X, Clock, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, X, Clock, Trash2, Phone } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../components/ui/Card';
@@ -20,18 +20,23 @@ const LeaveRequests = () => {
       try {
         const { data } = await api.get('/leaves');
         
-        // Map backend data to UI expected format
-        const formattedData = data.map(req => ({
-          id: req._id,
-          name: req.studentId ? `${req.studentId.name}${req.studentId.surname ? ' ' + req.studentId.surname : ''}` : 'Unknown Student',
-          photo: req.studentId?.photo || '',
-          room: req.studentId?.roomNumber || 'N/A',
-          from: new Date(req.fromDate).toLocaleDateString(),
-          to: new Date(req.toDate).toLocaleDateString(),
-          days: req.days,
-          reason: req.reason,
-          status: req.status
-        }));
+        // Map backend data to UI expected format (only show requests where student specified dates)
+        const formattedData = data
+          .filter(req => req.fromDate && req.toDate && !isNaN(new Date(req.fromDate).getTime()) && !isNaN(new Date(req.toDate).getTime()))
+          .map(req => ({
+            id: req._id,
+            name: req.studentId ? `${req.studentId.name}${req.studentId.surname ? ' ' + req.studentId.surname : ''}` : 'Unknown Student',
+            photo: req.studentId?.photo || '',
+            room: req.studentId?.roomNumber || 'N/A',
+            leaveType: req.leaveType || 'Leave',
+            parentPhone: req.parentPhone || '',
+            studentPhone: req.studentId?.phone || '',
+            from: new Date(req.fromDate).toLocaleDateString(),
+            to: new Date(req.toDate).toLocaleDateString(),
+            days: req.days,
+            reason: req.reason,
+            status: req.status
+          }));
         
         setRequests(formattedData);
       } catch (error) {
@@ -150,18 +155,65 @@ const LeaveRequests = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-lg text-sm font-medium">
-                    <CalendarDays className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                    <span>{request.from}</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 p-2.5 bg-black/5 dark:bg-white/5 rounded-lg text-sm font-medium">
+                    <CalendarDays className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="text-xs sm:text-sm">{request.from}</span>
                     <span className="text-black/40 dark:text-white/40">→</span>
-                    <span>{request.to}</span>
-                    <span className="ml-auto text-primary-600 dark:text-primary-400 font-bold">{request.days} Days</span>
+                    <span className="text-xs sm:text-sm">{request.to}</span>
+                    <span className="ml-auto text-xs sm:text-sm text-primary-600 dark:text-primary-400 font-bold shrink-0">{request.days} Days</span>
+                  </div>
+
+                  {/* Leave Type & Contact Number Badge */}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {request.leaveType && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                          {request.leaveType}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Student Added Number / Contact Number */}
+                    <div className="grid grid-cols-1 gap-2 text-xs">
+                      {request.parentPhone && (
+                        <a 
+                          href={`tel:${request.parentPhone}`}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors group"
+                          title="Call Added Contact Number"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">Added Contact:</span>
+                            <span className="font-bold font-mono tracking-wide text-xs">{request.parentPhone}</span>
+                          </div>
+                        </a>
+                      )}
+                      {request.studentPhone && request.studentPhone !== request.parentPhone && (
+                        <a 
+                          href={`tel:${request.studentPhone}`}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors group"
+                          title="Call Student Mobile Number"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 group-hover:scale-110 transition-transform" />
+                          <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-blue-700 dark:text-blue-300 font-medium">Student Mobile:</span>
+                            <span className="font-bold font-mono tracking-wide text-xs">{request.studentPhone}</span>
+                          </div>
+                        </a>
+                      )}
+                      {!request.parentPhone && !request.studentPhone && (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-black/5 dark:bg-white/5 text-black/50 dark:text-white/50 text-xs">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span>No contact number provided</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-1">Reason:</p>
-                    <p className="text-sm p-3 border border-border rounded-lg bg-card text-black/80 dark:text-white/80 whitespace-pre-wrap break-words [overflow-wrap:anywhere] max-h-36 overflow-y-auto">
+                    <p className="text-xs font-medium text-black/50 dark:text-white/50 mb-1">Reason:</p>
+                    <p className="text-sm p-2.5 border border-border rounded-lg bg-card text-black/80 dark:text-white/80 whitespace-pre-wrap break-words [overflow-wrap:anywhere] max-h-28 overflow-y-auto leading-relaxed">
                       "{request.reason}"
                     </p>
                   </div>

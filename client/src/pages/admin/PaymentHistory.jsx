@@ -48,12 +48,16 @@ const PaymentHistory = () => {
     const studentRoom = (payment.studentId?.roomNumber || '').toLowerCase();
     const transactionId = (payment.transactionId || '').toLowerCase();
     const method = (payment.paymentMethod || '').toLowerCase();
+    const notes = (payment.notes || '').toLowerCase();
+    const paymentType = (payment.paymentType || '').toLowerCase();
 
     return (
       studentName.includes(searchLower) ||
       studentRoom.includes(searchLower) ||
       transactionId.includes(searchLower) ||
-      method.includes(searchLower)
+      method.includes(searchLower) ||
+      notes.includes(searchLower) ||
+      paymentType.includes(searchLower)
     );
   });
 
@@ -146,12 +150,26 @@ const PaymentHistory = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
-                      <CreditCard className="w-4 h-4 text-black/50 dark:text-white/50" />
-                      <span>{payment.paymentMethod}</span>
+                      <CreditCard className="w-4 h-4 text-black/50 dark:text-white/50 shrink-0" />
+                      <span className="font-medium">{payment.paymentMethod}</span>
                     </div>
+                    {payment.paymentType === 'Library Fee' ? (
+                      <span className="inline-block text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded mt-1">
+                        Library Fee
+                      </span>
+                    ) : payment.notes ? (
+                      <div className="text-xs text-black/50 dark:text-white/50 mt-0.5 truncate max-w-[150px]" title={payment.notes}>
+                        {payment.notes}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-6 py-4 font-mono text-xs text-black/60 dark:text-white/60">
-                    {payment.transactionId || '-'}
+                    <div>{payment.transactionId || '-'}</div>
+                    {payment.notes && payment.paymentType === 'Library Fee' && (
+                      <div className="text-[11px] text-black/50 dark:text-white/50 font-sans mt-0.5 max-w-[180px] truncate" title={payment.notes}>
+                        {payment.notes}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="font-bold text-green-600 dark:text-green-400">

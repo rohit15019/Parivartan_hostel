@@ -50,23 +50,29 @@ const StudentLeaveRequest = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!fromDate || !toDate || !reason) {
-      setError('Please fill in all required fields.');
+    if (!fromDate) {
+      setError('Please select a start date (From Date).');
       return;
     }
-    
+    if (!reason || !reason.trim()) {
+      setError('Please provide a reason for leave.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     
     try {
-      const days = calculateDays(fromDate, toDate);
+      const effectiveToDate = toDate || fromDate;
+      const days = calculateDays(fromDate, effectiveToDate);
+      
       await api.post('/leaves', {
         leaveType,
         fromDate,
-        toDate,
+        toDate: effectiveToDate,
         days,
-        reason,
-        parentPhone
+        reason: reason.trim(),
+        parentPhone: parentPhone || ''
       });
       
       // Reset form
@@ -156,8 +162,8 @@ const StudentLeaveRequest = () => {
                     <Input id="fromDate" name="fromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="toDate" className="text-sm font-medium">To Date *</label>
-                    <Input id="toDate" name="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} required min={fromDate} />
+                    <label htmlFor="toDate" className="text-sm font-medium">To Date</label>
+                    <Input id="toDate" name="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} min={fromDate} />
                   </div>
                 </div>
 
@@ -175,8 +181,8 @@ const StudentLeaveRequest = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="parentPhone" className="text-sm font-medium">Parent/Guardian Phone *</label>
-                  <Input id="parentPhone" name="parentPhone" type="text" required minLength={10} maxLength={10} pattern="\d{10}" title="Phone number must be exactly 10 digits" placeholder="10 digit number" value={parentPhone} onChange={(e) => setParentPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} />
+                  <label htmlFor="parentPhone" className="text-sm font-medium">Parent/Guardian Phone</label>
+                  <Input id="parentPhone" name="parentPhone" type="text" placeholder="Phone number (optional)" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} />
                 </div>
 
                 <Button type="submit" className="w-full gap-2 mt-4" disabled={submitting}>
@@ -208,9 +214,17 @@ const StudentLeaveRequest = () => {
                     <div key={req._id} className="p-4 rounded-xl border border-border bg-black/5 dark:bg-white/5 flex flex-col space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 font-medium">
-                          <span>{new Date(req.fromDate).toLocaleDateString()}</span>
-                          <span className="text-black/40 dark:text-white/40">→</span>
-                          <span>{new Date(req.toDate).toLocaleDateString()}</span>
+                          {req.fromDate && req.toDate ? (
+                            <>
+                              <span>{new Date(req.fromDate).toLocaleDateString()}</span>
+                              <span className="text-black/40 dark:text-white/40">→</span>
+                              <span>{new Date(req.toDate).toLocaleDateString()}</span>
+                            </>
+                          ) : req.fromDate ? (
+                            <span>{new Date(req.fromDate).toLocaleDateString()}</span>
+                          ) : (
+                            <span className="text-xs text-black/50 dark:text-white/50 italic">No date specified</span>
+                          )}
                         </div>
                         {req.status === 'PENDING' && (
                           <div className="flex gap-2">

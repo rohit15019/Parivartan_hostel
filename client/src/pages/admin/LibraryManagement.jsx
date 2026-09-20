@@ -41,6 +41,11 @@ const LibraryManagement = () => {
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
   const [feePaid, setFeePaid] = useState(true);
+  const [recordPayment, setRecordPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [assignNotes, setAssignNotes] = useState('');
   const [assigning, setAssigning] = useState(false);
 
@@ -144,6 +149,11 @@ const LibraryManagement = () => {
     setSelectedStudentId('');
     setStudentSearch('');
     setFeePaid(true);
+    setRecordPayment(false);
+    setPaymentAmount('');
+    setPaymentMethod('Cash');
+    setTransactionId('');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
     setAssignNotes('');
     setIsAssignModalOpen(true);
   };
@@ -156,6 +166,14 @@ const LibraryManagement = () => {
       return;
     }
 
+    if (recordPayment) {
+      const numAmt = Number(paymentAmount);
+      if (isNaN(numAmt) || numAmt <= 0) {
+        alert('Please enter a valid payment amount greater than 0, or uncheck "Record Library Fee Payment".');
+        return;
+      }
+    }
+
     const studentObj = students.find(s => s._id === selectedStudentId);
     if (studentObj && studentObj.assignedSeat && studentObj.assignedSeat !== selectedSeat.seatNumber) {
       alert(`Cannot assign ${studentObj.name} because they are already occupying Seat ${studentObj.assignedSeat}. A student cannot hold multiple library seats. Please vacate Seat ${studentObj.assignedSeat} first.`);
@@ -164,12 +182,18 @@ const LibraryManagement = () => {
 
     setAssigning(true);
     try {
-      await api.put(`/library/seats/${selectedSeat._id}/assign`, {
+      const res = await api.put(`/library/seats/${selectedSeat._id}/assign`, {
         studentId: selectedStudentId,
-        feePaid,
-        notes: assignNotes
+        feePaid: feePaid || recordPayment,
+        notes: assignNotes,
+        recordPayment,
+        paymentAmount: recordPayment ? Number(paymentAmount) : 0,
+        paymentMethod,
+        transactionId,
+        paymentDate
       });
 
+      alert(res.data.message || 'Seat assigned successfully!');
       setIsAssignModalOpen(false);
       setSelectedSeat(null);
       await refreshSeats();
@@ -567,33 +591,33 @@ const LibraryManagement = () => {
         </>
       )}
 
-      {/* Add Seat Modal (Single or Batch) */}
+      {/* Add Seat Modal */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-border"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border max-h-[92vh] flex flex-col my-auto"
             >
-              <div className="flex justify-between items-center p-6 border-b border-border bg-black/5 dark:bg-white/5">
+              <div className="flex justify-between items-center px-4 py-3.5 sm:px-6 sm:py-4 border-b border-border bg-black/5 dark:bg-white/5 shrink-0">
                 <div>
-                  <h3 className="text-lg font-bold">Add Library Seats</h3>
+                  <h3 className="text-base sm:text-lg font-bold">Add Library Seats</h3>
                   <p className="text-xs text-black/50 dark:text-white/50 mt-0.5">Create individual seats or generate batch ranges</p>
                 </div>
-                <button onClick={() => setIsAddModalOpen(false)} className="text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white">
+                <button onClick={() => setIsAddModalOpen(false)} className="p-1 rounded-lg text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Add Mode Selector */}
-              <div className="p-6 pb-0">
+              <div className="p-4 sm:p-6 pb-0 shrink-0">
                 <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl">
                   <button
                     type="button"
                     onClick={() => setAddMode('single')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                       addMode === 'single' ? 'bg-card shadow-sm text-foreground' : 'text-black/60 dark:text-white/60'
                     }`}
                   >
@@ -602,7 +626,7 @@ const LibraryManagement = () => {
                   <button
                     type="button"
                     onClick={() => setAddMode('batch')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                       addMode === 'batch' ? 'bg-card shadow-sm text-foreground' : 'text-black/60 dark:text-white/60'
                     }`}
                   >
@@ -611,11 +635,11 @@ const LibraryManagement = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleAddSeat} className="p-6 space-y-4">
+              <form onSubmit={handleAddSeat} className="p-4 sm:p-6 space-y-3.5 overflow-y-auto flex-1">
                 {addMode === 'single' ? (
                   <>
                     <div>
-                      <label htmlFor="seatNumber" className="block text-sm font-medium mb-1">
+                      <label htmlFor="seatNumber" className="block text-xs sm:text-sm font-medium mb-1">
                         Seat Number *
                       </label>
                       <Input 
@@ -623,28 +647,31 @@ const LibraryManagement = () => {
                         name="seatNumber"
                         required 
                         placeholder="e.g. L-01, Seat-12, Desk-A"
+                        className="h-9 sm:h-10 text-xs sm:text-sm"
                         value={newSeat.seatNumber}
                         onChange={(e) => setNewSeat({...newSeat, seatNumber: e.target.value})}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label htmlFor="section" className="block text-sm font-medium mb-1">Section</label>
+                        <label htmlFor="section" className="block text-xs sm:text-sm font-medium mb-1">Section</label>
                         <Input 
                           id="section"
                           name="section"
                           placeholder="e.g. Main Hall"
+                          className="h-9 sm:h-10 text-xs sm:text-sm"
                           value={newSeat.section}
                           onChange={(e) => setNewSeat({...newSeat, section: e.target.value})}
                         />
                       </div>
                       <div>
-                        <label htmlFor="floor" className="block text-sm font-medium mb-1">Floor</label>
+                        <label htmlFor="floor" className="block text-xs sm:text-sm font-medium mb-1">Floor</label>
                         <Input 
                           id="floor"
                           name="floor"
                           type="number"
                           min="1"
+                          className="h-9 sm:h-10 text-xs sm:text-sm"
                           value={newSeat.floor}
                           onChange={(e) => setNewSeat({...newSeat, floor: parseInt(e.target.value) || 1})}
                         />
@@ -653,13 +680,14 @@ const LibraryManagement = () => {
                   </>
                 ) : (
                   <>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2.5">
                       <div>
                         <label htmlFor="prefix" className="block text-xs font-medium mb-1">Prefix</label>
                         <Input 
                           id="prefix"
                           name="prefix"
                           placeholder="e.g. L-"
+                          className="h-9 text-xs"
                           value={batchData.prefix}
                           onChange={(e) => setBatchData({...batchData, prefix: e.target.value})}
                         />
@@ -672,6 +700,7 @@ const LibraryManagement = () => {
                           type="number"
                           required
                           min="1"
+                          className="h-9 text-xs"
                           value={batchData.startNum}
                           onChange={(e) => setBatchData({...batchData, startNum: e.target.value})}
                         />
@@ -684,6 +713,7 @@ const LibraryManagement = () => {
                           type="number"
                           required
                           min="1"
+                          className="h-9 text-xs"
                           value={batchData.endNum}
                           onChange={(e) => setBatchData({...batchData, endNum: e.target.value})}
                         />
@@ -692,24 +722,26 @@ const LibraryManagement = () => {
                     <p className="text-[11px] text-black/50 dark:text-white/50">
                       Preview: <strong>{batchData.prefix}{batchData.startNum || 1}</strong> to <strong>{batchData.prefix}{batchData.endNum || 10}</strong>
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label htmlFor="batchSection" className="block text-sm font-medium mb-1">Section</label>
+                        <label htmlFor="batchSection" className="block text-xs sm:text-sm font-medium mb-1">Section</label>
                         <Input 
                           id="batchSection"
                           name="batchSection"
                           placeholder="e.g. Main Hall"
+                          className="h-9 sm:h-10 text-xs sm:text-sm"
                           value={batchData.section}
                           onChange={(e) => setBatchData({...batchData, section: e.target.value})}
                         />
                       </div>
                       <div>
-                        <label htmlFor="batchFloor" className="block text-sm font-medium mb-1">Floor</label>
+                        <label htmlFor="batchFloor" className="block text-xs sm:text-sm font-medium mb-1">Floor</label>
                         <Input 
                           id="batchFloor"
                           name="batchFloor"
                           type="number"
                           min="1"
+                          className="h-9 sm:h-10 text-xs sm:text-sm"
                           value={batchData.floor}
                           onChange={(e) => setBatchData({...batchData, floor: parseInt(e.target.value) || 1})}
                         />
@@ -718,11 +750,11 @@ const LibraryManagement = () => {
                   </>
                 )}
 
-                <div className="pt-4 flex justify-end gap-3 border-t border-border">
-                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                <div className="pt-3 flex justify-end gap-2.5 border-t border-border shrink-0">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setIsAddModalOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" size="sm">
                     {addMode === 'batch' ? 'Generate Seats' : 'Add Seat'}
                   </Button>
                 </div>
@@ -734,162 +766,345 @@ const LibraryManagement = () => {
 
       {/* Assign Student Modal */}
       <AnimatePresence>
-        {isAssignModalOpen && selectedSeat && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-border max-h-[90vh] flex flex-col"
-            >
-              <div className="flex justify-between items-center p-6 border-b border-border bg-black/5 dark:bg-white/5 shrink-0">
-                <div>
-                  <h3 className="text-lg font-bold">Assign Student to Seat {selectedSeat.seatNumber}</h3>
-                  <p className="text-xs text-black/50 dark:text-white/50 mt-0.5">Select a student who paid library fees</p>
-                </div>
-                <button onClick={() => setIsAssignModalOpen(false)} className="text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        {isAssignModalOpen && selectedSeat && (() => {
+          const selectedStudent = students.find(s => s._id === selectedStudentId);
 
-              <form onSubmit={handleAssignSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 flex flex-col">
-                {/* Search Student */}
-                <div className="space-y-1.5 shrink-0">
-                  <label htmlFor="studentFilter" className="text-xs font-semibold text-black/60 dark:text-white/60 block">
-                    Search Student
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
-                    <Input 
-                      id="studentFilter"
-                      name="studentFilter"
-                      placeholder="Search by student name, ID, or room..."
-                      className="pl-9 text-sm"
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                    />
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border max-h-[92vh] flex flex-col my-auto overflow-hidden"
+              >
+                {/* Modal Header */}
+                <div className="flex justify-between items-center px-4 py-3.5 sm:px-6 sm:py-4 border-b border-border bg-black/5 dark:bg-white/5 shrink-0">
+                  <div className="min-w-0 pr-2">
+                    <h3 className="text-base sm:text-lg font-bold truncate text-foreground">
+                      Assign Student to Seat {selectedSeat.seatNumber}
+                    </h3>
+                    <p className="text-xs text-black/50 dark:text-white/50 truncate">
+                      {selectedSeat.section} • Floor {selectedSeat.floor}
+                    </p>
                   </div>
+                  <button 
+                    type="button"
+                    onClick={() => setIsAssignModalOpen(false)} 
+                    className="p-1 rounded-lg text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white transition-colors shrink-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
-                {/* Student Selection List */}
-                <div className="space-y-1.5 flex-1 flex flex-col min-h-0">
-                  <label className="text-xs font-semibold text-black/60 dark:text-white/60 block">
-                    Select Student * ({filteredStudents.length} available)
-                  </label>
-                  <div className="border border-border rounded-xl p-2 max-h-56 overflow-y-auto space-y-2 bg-black/5 dark:bg-white/5">
-                    {filteredStudents.length === 0 ? (
-                      <p className="text-center text-xs text-black/50 dark:text-white/50 py-6">No matching students found.</p>
-                    ) : (
-                      filteredStudents.map((st) => {
-                        const isSelected = selectedStudentId === st._id;
-                        const isAlreadyAssigned = st.assignedSeat && st.assignedSeat !== selectedSeat.seatNumber;
+                {/* Modal Form Body - Scrollable */}
+                <form id="assignSeatForm" onSubmit={handleAssignSubmit} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+                  {/* Student Selection Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60">
+                        Student Selection *
+                      </label>
+                      {selectedStudent && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStudentId('')}
+                          className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                          Change Student
+                        </button>
+                      )}
+                    </div>
 
-                        return (
-                          <div
-                            key={st._id}
-                            onClick={() => {
-                              if (isAlreadyAssigned) {
-                                alert(`${st.name} ${st.surname || ''} is already assigned to Seat ${st.assignedSeat}. A student cannot hold more than one library seat. Please vacate Seat ${st.assignedSeat} first.`);
-                                return;
-                              }
-                              setSelectedStudentId(st._id);
-                            }}
-                            className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 ${
-                              isAlreadyAssigned
-                                ? 'opacity-60 bg-black/[0.03] dark:bg-white/[0.03] border-dashed border-border cursor-not-allowed'
-                                : isSelected 
-                                  ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-500 ring-2 ring-primary-500/20 cursor-pointer' 
-                                  : 'bg-card border-border/60 hover:border-border cursor-pointer'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              {st.photo ? (
-                                <img 
-                                  src={st.photo} 
-                                  alt={st.name} 
-                                  className="w-8 h-8 rounded-full object-cover border border-border shrink-0 shadow-xs" 
-                                />
-                              ) : (
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                  isSelected ? 'bg-primary-600 text-white' : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                                }`}>
-                                  {(st.name || 'U').charAt(0)}
-                                </div>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-sm truncate text-foreground">
-                                  {st.name} {st.surname || ''}
-                                </p>
-                                <p className="text-xs text-black/50 dark:text-white/50 truncate">
-                                  ID: {st.studentId} • Room {st.roomNumber || 'N/A'}
-                                </p>
-                              </div>
+                    {selectedStudent ? (
+                      /* Selected Student Compact Summary Card */
+                      <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-300 dark:border-primary-800 flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {selectedStudent.photo ? (
+                            <img 
+                              src={selectedStudent.photo} 
+                              alt={selectedStudent.name} 
+                              className="w-10 h-10 rounded-full object-cover border border-primary-300 dark:border-primary-700 shrink-0" 
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 bg-primary-600 text-white shadow-xs">
+                              {(selectedStudent.name || 'U').charAt(0)}
                             </div>
-
-                            <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                              {isAlreadyAssigned ? (
-                                <Badge variant="danger" className="text-[10px] px-1.5 py-0">
-                                  Occupying Seat {st.assignedSeat}
-                                </Badge>
-                              ) : (
-                                <>
-                                  {st.feeInfo?.status === 'PAID' && (
-                                    <Badge variant="success" className="text-[10px] px-1.5 py-0">Hostel Fee Paid</Badge>
-                                  )}
-                                  {st.feeInfo?.status === 'PARTIALLY PAID' && (
-                                    <Badge variant="warning" className="text-[10px] px-1.5 py-0">Partially Paid</Badge>
-                                  )}
-                                  {st.feeInfo?.status === 'PENDING' && (
-                                    <Badge variant="danger" className="text-[10px] px-1.5 py-0">Fee Pending</Badge>
-                                  )}
-                                </>
-                              )}
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-sm text-foreground truncate">
+                                {selectedStudent.name} {selectedStudent.surname || ''}
+                              </p>
+                              <Badge variant="success" className="text-[10px] px-1.5 py-0 shrink-0">Selected</Badge>
                             </div>
+                            <p className="text-xs text-black/60 dark:text-white/60 truncate">
+                              ID: {selectedStudent.studentId} • Room {selectedStudent.roomNumber || 'N/A'}
+                            </p>
                           </div>
-                        );
-                      })
+                        </div>
+
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setSelectedStudentId('')}
+                          className="text-xs text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white h-8 px-2 shrink-0"
+                        >
+                          <X className="w-4 h-4 mr-1" /> Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Student Search & List */
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="studentFilter"
+                            name="studentFilter"
+                            placeholder="Search by student name, ID, or room..."
+                            className="pl-9 text-xs sm:text-sm h-9 sm:h-10"
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="border border-border rounded-xl p-1.5 max-h-40 sm:max-h-48 overflow-y-auto space-y-1.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                          {filteredStudents.length === 0 ? (
+                            <p className="text-center text-xs text-black/50 dark:text-white/50 py-6">No matching students found.</p>
+                          ) : (
+                            filteredStudents.map((st) => {
+                              const isSelected = selectedStudentId === st._id;
+                              const isAlreadyAssigned = st.assignedSeat && st.assignedSeat !== selectedSeat.seatNumber;
+
+                              return (
+                                <div
+                                  key={st._id}
+                                  onClick={() => {
+                                    if (isAlreadyAssigned) {
+                                      alert(`${st.name} ${st.surname || ''} is already assigned to Seat ${st.assignedSeat}. A student cannot hold more than one library seat.`);
+                                      return;
+                                    }
+                                    setSelectedStudentId(st._id);
+                                  }}
+                                  className={`p-2 sm:p-2.5 rounded-lg border transition-all flex items-center justify-between gap-2.5 ${
+                                    isAlreadyAssigned
+                                      ? 'opacity-60 bg-black/[0.03] dark:bg-white/[0.03] border-dashed border-border cursor-not-allowed'
+                                      : isSelected 
+                                        ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-500 ring-2 ring-primary-500/20 cursor-pointer' 
+                                        : 'bg-card border-border/60 hover:border-primary-300 dark:hover:border-primary-800 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] cursor-pointer'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    {st.photo ? (
+                                      <img 
+                                        src={st.photo} 
+                                        alt={st.name} 
+                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-border shrink-0" 
+                                      />
+                                    ) : (
+                                      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                        isSelected ? 'bg-primary-600 text-white' : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                                      }`}>
+                                        {(st.name || 'U').charAt(0)}
+                                      </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-semibold text-xs sm:text-sm truncate text-foreground">
+                                        {st.name} {st.surname || ''}
+                                      </p>
+                                      <p className="text-[11px] text-black/50 dark:text-white/50 truncate">
+                                        ID: {st.studentId} • Room {st.roomNumber || 'N/A'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                                    {isAlreadyAssigned ? (
+                                      <Badge variant="danger" className="text-[9px] sm:text-[10px] px-1.5 py-0">
+                                        Seat {st.assignedSeat}
+                                      </Badge>
+                                    ) : (
+                                      <>
+                                        {st.feeInfo?.status === 'PAID' && (
+                                          <Badge variant="success" className="text-[9px] sm:text-[10px] px-1.5 py-0">Hostel Paid</Badge>
+                                        )}
+                                        {st.feeInfo?.status === 'PARTIALLY PAID' && (
+                                          <Badge variant="warning" className="text-[9px] sm:text-[10px] px-1.5 py-0">Partial</Badge>
+                                        )}
+                                        {st.feeInfo?.status === 'PENDING' && (
+                                          <Badge variant="danger" className="text-[9px] sm:text-[10px] px-1.5 py-0">Pending</Badge>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Library Fee Paid Checkbox & Notes */}
-                <div className="space-y-3 pt-2 shrink-0">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={feePaid}
-                      onChange={(e) => setFeePaid(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 rounded border-border focus:ring-primary-500"
-                    />
-                    <span className="text-sm font-medium">Library Fee Confirmed / Paid</span>
-                  </label>
+                  {/* Library Fee & Payment Option Section */}
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label htmlFor="recordLibraryPayment" className="flex items-center gap-2 cursor-pointer select-none">
+                        <input 
+                          id="recordLibraryPayment"
+                          name="recordLibraryPayment"
+                          type="checkbox"
+                          checked={recordPayment}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setRecordPayment(val);
+                            if (val) setFeePaid(true);
+                          }}
+                          className="w-4 h-4 text-primary-600 rounded border-border focus:ring-primary-500"
+                        />
+                        <span className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                          <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          Record Library Fee Payment
+                        </span>
+                      </label>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
+                        Syncs to Payment History
+                      </span>
+                    </div>
 
-                  <div>
-                    <label htmlFor="assignNotes" className="block text-xs font-medium mb-1 text-black/60 dark:text-white/60">
-                      Notes (Optional)
-                    </label>
-                    <Input 
-                      id="assignNotes"
-                      name="assignNotes"
-                      placeholder="e.g. Paid cash for 6 months, shift morning"
-                      value={assignNotes}
-                      onChange={(e) => setAssignNotes(e.target.value)}
-                    />
+                    {recordPayment && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="p-3 sm:p-3.5 rounded-xl bg-primary-50/50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-800/40 space-y-2.5"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                          <div>
+                            <label htmlFor="libraryFeeAmount" className="block text-xs font-semibold mb-1 text-black/70 dark:text-white/70">
+                              Fee Amount (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black/50 dark:text-white/50 font-bold text-sm">₹</span>
+                              <Input 
+                                id="libraryFeeAmount"
+                                name="libraryFeeAmount"
+                                type="number"
+                                min="1"
+                                placeholder="e.g. 500"
+                                className="pl-7 text-xs sm:text-sm font-semibold h-9 sm:h-10"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                required={recordPayment}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label htmlFor="libraryPaymentMethod" className="block text-xs font-semibold mb-1 text-black/70 dark:text-white/70">
+                              Payment Method *
+                            </label>
+                            <select 
+                              id="libraryPaymentMethod"
+                              name="libraryPaymentMethod"
+                              value={paymentMethod}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                              className="flex h-9 sm:h-10 w-full rounded-md border border-input bg-card px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <option value="Cash">Cash</option>
+                              <option value="UPI">UPI / QR Code</option>
+                              <option value="Bank Transfer">Bank Transfer</option>
+                              <option value="Cheque">Cheque</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                          <div>
+                            <label htmlFor="libraryTransactionId" className="block text-xs font-semibold mb-1 text-black/70 dark:text-white/70">
+                              Transaction / Ref ID (Optional)
+                            </label>
+                            <Input 
+                              id="libraryTransactionId"
+                              name="libraryTransactionId"
+                              placeholder="e.g. UPI Ref # or receipt #"
+                              className="text-xs font-mono h-9 sm:h-10"
+                              value={transactionId}
+                              onChange={(e) => setTransactionId(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="libraryPaymentDate" className="block text-xs font-semibold mb-1 text-black/70 dark:text-white/70">
+                              Payment Date
+                            </label>
+                            <Input 
+                              id="libraryPaymentDate"
+                              name="libraryPaymentDate"
+                              type="date"
+                              className="text-xs h-9 sm:h-10"
+                              value={paymentDate}
+                              onChange={(e) => setPaymentDate(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {!recordPayment && (
+                      <label htmlFor="markLibraryFeePaid" className="flex items-center gap-2 cursor-pointer select-none">
+                        <input 
+                          id="markLibraryFeePaid"
+                          name="markLibraryFeePaid"
+                          type="checkbox"
+                          checked={feePaid}
+                          onChange={(e) => setFeePaid(e.target.checked)}
+                          className="w-4 h-4 text-primary-600 rounded border-border focus:ring-primary-500"
+                        />
+                        <span className="text-xs font-medium text-black/70 dark:text-white/70">Mark Library Fee as Confirmed / Paid</span>
+                      </label>
+                    )}
+
+                    <div>
+                      <label htmlFor="assignNotes" className="block text-xs font-medium mb-1 text-black/60 dark:text-white/60">
+                        Notes / Remarks (Optional)
+                      </label>
+                      <Input 
+                        id="assignNotes"
+                        name="assignNotes"
+                        placeholder="e.g. Paid for 6 months, morning shift"
+                        className="text-xs sm:text-sm h-9 sm:h-10"
+                        value={assignNotes}
+                        onChange={(e) => setAssignNotes(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
+                </form>
 
-                <div className="pt-4 flex justify-end gap-3 border-t border-border shrink-0">
-                  <Button type="button" variant="outline" onClick={() => setIsAssignModalOpen(false)}>
+                {/* Sticky Modal Footer */}
+                <div className="p-3.5 sm:p-4 border-t border-border bg-black/5 dark:bg-white/5 flex items-center justify-end gap-2.5 shrink-0">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsAssignModalOpen(false)}
+                    className="text-xs sm:text-sm h-9 sm:h-10"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={assigning || !selectedStudentId}>
-                    {assigning ? 'Assigning...' : 'Confirm Assignment'}
+                  <Button 
+                    type="submit" 
+                    form="assignSeatForm"
+                    disabled={assigning || !selectedStudentId}
+                    className="text-xs sm:text-sm h-9 sm:h-10"
+                  >
+                    {assigning ? 'Assigning...' : recordPayment ? 'Confirm & Record Payment' : 'Confirm Assignment'}
                   </Button>
                 </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  rawPassword: {
+    type: String,
+    default: 'password123',
+  },
   role: {
     type: String,
     enum: ['admin', 'student'],
@@ -21,6 +25,36 @@ const userSchema = new mongoose.Schema({
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
+  },
+  // Email OTP Verification fields
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  loginOtp: {
+    type: String,
+    default: null,
+  },
+  loginOtpExpires: {
+    type: Date,
+    default: null,
+  },
+  loginOtpAttempts: {
+    type: Number,
+    default: 0,
+  },
+  // Password Reset fields
+  resetPasswordOtp: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+  },
+  resetPasswordAttempts: {
+    type: Number,
+    default: 0,
   }
 }, { timestamps: true });
 

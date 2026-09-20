@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   Mail, 
   Lock, 
   ArrowRight, 
+  ArrowLeft,
   Target, 
   Compass, 
   Users, 
@@ -14,19 +15,24 @@ import {
   UserCheck, 
   Sparkles, 
   Quote, 
-  BookOpen,
-  ExternalLink,
-  Camera,
-  Image as ImageIcon
+  BookOpen, 
+  ExternalLink, 
+  Camera, 
+  ShieldCheck, 
+  RefreshCw, 
+  CheckCircle2, 
+  KeyRound,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
-import logoImg from '../../assets/logo.png';
+import logoImg from '../../assets/original.jpeg';
 import eventTrainingImg from '../../assets/event_training.jpg';
 import hostelCampusImg from '../../assets/hostel_campus.jpg';
 import hostelBuildingImg from '../../assets/hostel_building.jpg';
@@ -35,10 +41,42 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student'); // 'student' or 'admin'
+  
+  // Navigation Steps: 'credentials' | 'first_login_otp' | 'forgot_request' | 'forgot_verify'
+  const [step, setStep] = useState('credentials');
+  
+  // OTP States
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [tempToken, setTempToken] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  
+  // Forgot Password States
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  const otpInputRefs = useRef([]);
   const navigate = useNavigate();
   const { toggleTheme, theme } = useTheme();
-  const { login, user, token } = useAuth();
-  const [error, setError] = useState('');
+  const { 
+    login, 
+    verifyOtp, 
+    resendOtp, 
+    requestForgotPassword, 
+    resetPassword, 
+    resendResetOtp, 
+    user, 
+    token 
+  } = useAuth();
 
   useEffect(() => {
     if (token && user) {
@@ -50,19 +88,239 @@ const Login = () => {
     }
   }, [token, user, navigate]);
 
-  const handleLogin = async (e) => {
+  // Resend Timer Countdown
+  useEffect(() => {
+    let interval = null;
+    if ((step === 'first_login_otp' || step === 'forgot_verify') && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setCanResend(true);
+      if (interval) clearInterval(interval);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [step, resendTimer]);
+
+  // Step 1: Handle Credentials Submit (Signs in directly or asks for first-time OTP)
+  const handleCredentialsSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
+    setLoading(true);
+
     try {
-      const loggedUser = await login(email, password, role);
+      const response = await login(email, password, role);
+
+      if (response && response.requiresOtp) {
+        // First-time login requires email verification OTP
+        setTempToken(response.tempToken);
+        setMaskedEmail(response.maskedEmail || email);
+        setStep('first_login_otp');
+        setOtp(['', '', '', '', '', '']);
+        setResendTimer(60);
+        setCanResend(false);
+        setSuccessMessage(response.message || 'Verification code sent for first-time activation.');
+
+        setTimeout(() => {
+          if (otpInputRefs.current[0]) {
+            otpInputRefs.current[0].focus();
+          }
+        }, 150);
+      } else if (response && (response.token || token)) {
+        // Already verified: direct sign-in completed!
+        if (response.role === 'admin' || role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/student/dashboard', { replace: true });
+        }
+      }
+    } catch (err) {
+      setError(typeof err === 'string' ? err : (err.message || 'Login failed. Please check your credentials.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // OTP Input Handlers
+  const handleOtpChange = (index, value) => {
+    const cleanVal = value.replace(/[^0-9]/g, '');
+    if (!cleanVal && value !== '') return;
+
+    const newOtp = [...otp];
+    newOtp[index] = cleanVal ? cleanVal[cleanVal.length - 1] : '';
+    setOtp(newOtp);
+
+    if (cleanVal && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        otpInputRefs.current[index - 1]?.focus();
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').trim().replace(/[^0-9]/g, '');
+    if (pastedData) {
+      const newOtp = ['', '', '', '', '', ''];
+      for (let i = 0; i < 6 && i < pastedData.length; i++) {
+        newOtp[i] = pastedData[i];
+      }
+      setOtp(newOtp);
+      const nextIndex = Math.min(pastedData.length, 5);
+      otpInputRefs.current[nextIndex]?.focus();
+    }
+  };
+
+  // Verify First-Time Login OTP
+  const handleVerifyFirstLoginOtp = async (e) => {
+    e.preventDefault();
+    const enteredOtp = otp.join('');
+    if (enteredOtp.length < 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const loggedUser = await verifyOtp(tempToken, enteredOtp);
       if (loggedUser.role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
       } else {
         navigate('/student/dashboard', { replace: true });
       }
     } catch (err) {
-      setError(err);
+      setError(typeof err === 'string' ? err : (err.message || 'Verification failed. Please try again.'));
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Resend Login OTP
+  const handleResendLoginOtp = async () => {
+    if (!canResend || resendLoading) return;
+
+    setError('');
+    setSuccessMessage('');
+    setResendLoading(true);
+
+    try {
+      const res = await resendOtp(tempToken);
+      setSuccessMessage(res.message || 'A fresh verification code has been sent.');
+      setResendTimer(60);
+      setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
+      otpInputRefs.current[0]?.focus();
+    } catch (err) {
+      setError(typeof err === 'string' ? err : (err.message || 'Failed to resend code.'));
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  // Forgot Password: Request OTP
+  const handleForgotPasswordRequest = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+    setLoading(true);
+
+    try {
+      const res = await requestForgotPassword(forgotEmail || email, role);
+      setTempToken(res.tempToken);
+      setMaskedEmail(res.maskedEmail || forgotEmail || email);
+      setStep('forgot_verify');
+      setOtp(['', '', '', '', '', '']);
+      setNewPassword('');
+      setConfirmPassword('');
+      setResendTimer(60);
+      setCanResend(false);
+      setSuccessMessage(res.message || 'Password reset code sent to your email.');
+
+      setTimeout(() => {
+        if (otpInputRefs.current[0]) {
+          otpInputRefs.current[0].focus();
+        }
+      }, 150);
+    } catch (err) {
+      setError(typeof err === 'string' ? err : (err.message || 'Failed to send reset code.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset Password: Submit New Password & OTP
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    const enteredOtp = otp.join('');
+    if (enteredOtp.length < 6) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await resetPassword(tempToken, enteredOtp, newPassword);
+      setSuccessMessage(res.message || 'Password reset successfully! Please sign in with your new password.');
+      setPassword(newPassword);
+      setEmail(forgotEmail || email);
+      setStep('credentials');
+    } catch (err) {
+      setError(typeof err === 'string' ? err : (err.message || 'Failed to reset password.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Resend Password Reset OTP
+  const handleResendResetOtp = async () => {
+    if (!canResend || resendLoading) return;
+
+    setError('');
+    setSuccessMessage('');
+    setResendLoading(true);
+
+    try {
+      const res = await resendResetOtp(tempToken);
+      setSuccessMessage(res.message || 'A fresh reset code has been sent.');
+      setResendTimer(60);
+      setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
+      otpInputRefs.current[0]?.focus();
+    } catch (err) {
+      setError(typeof err === 'string' ? err : (err.message || 'Failed to resend reset code.'));
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setStep('credentials');
+    setError('');
+    setSuccessMessage('');
+    setOtp(['', '', '', '', '', '']);
   };
 
   return (
@@ -290,7 +548,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Login / OTP Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
         <button 
           onClick={toggleTheme} 
@@ -306,6 +564,7 @@ const Login = () => {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
+          {/* Logo Header */}
           <div className="flex flex-col items-center gap-2 mb-6 text-center">
             <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 p-1.5 shadow-md border border-border flex items-center justify-center">
               <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain rounded-xl" />
@@ -317,82 +576,515 @@ const Login = () => {
           </div>
 
           <Card className="border-none shadow-xl bg-white/50 dark:bg-black/20 backdrop-blur-xl">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-3xl font-bold text-center">Welcome back</CardTitle>
-              <CardDescription className="text-center text-base">
-                Enter your details to sign in to your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Role Selection Toggle */}
-              <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg mb-8">
-                <button
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === 'student' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
-                  onClick={() => setRole('student')}
+            <AnimatePresence mode="wait">
+              {step === 'credentials' && (
+                /* STEP 1: Standard Login Form */
+                <motion.div
+                  key="credentials-step"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  Student
-                </button>
-                <button
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === 'admin' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
-                  onClick={() => setRole('admin')}
+                  <CardHeader className="space-y-1">
+                    <CardTitle className="text-3xl font-bold text-center">Welcome back</CardTitle>
+                    <CardDescription className="text-center text-base">
+                      Enter your details to sign in to your account
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Role Selection Toggle */}
+                    <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg mb-6">
+                      <button
+                        type="button"
+                        className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === 'student' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+                        onClick={() => setRole('student')}
+                      >
+                        Student
+                      </button>
+                      <button
+                        type="button"
+                        className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === 'admin' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+                        onClick={() => setRole('admin')}
+                      >
+                        Admin / Sir
+                      </button>
+                    </div>
+
+                    {successMessage && (
+                      <div className="p-3 mb-4 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span>{successMessage}</span>
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="p-3 mb-4 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+                        {error}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label htmlFor="loginIdentifier" className="text-xs font-semibold block text-foreground">
+                          {role === 'admin' ? 'Email Address *' : 'Student ID / Email / Phone *'}
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="loginIdentifier"
+                            name="loginIdentifier"
+                            autoComplete="username"
+                            type="text" 
+                            placeholder={role === 'admin' ? 'admin@example.com' : 'STU-2026-001 / 9876543210'} 
+                            className="pl-10 h-11 text-sm"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="loginPassword" className="text-xs font-semibold block text-foreground">
+                            Password *
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setError('');
+                              setSuccessMessage('');
+                              setForgotEmail(email);
+                              setStep('forgot_request');
+                            }}
+                            className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-semibold hover:underline cursor-pointer"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="loginPassword"
+                            name="loginPassword"
+                            autoComplete="current-password"
+                            type="password" 
+                            placeholder="••••••••" 
+                            className="pl-10 h-11 text-sm"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full h-11 text-sm font-semibold gap-2 mt-2 shadow-md shadow-primary-500/20" 
+                        size="lg"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Signing In...
+                          </>
+                        ) : (
+                          <>
+                            Sign In <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </motion.div>
+              )}
+
+              {step === 'first_login_otp' && (
+                /* STEP 2: First-Time Login Email Verification */
+                <motion.div
+                  key="first-login-otp-step"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  Admin / Sir
-                </button>
-              </div>
+                  <CardHeader className="space-y-1 pb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center mx-auto mb-2">
+                      <ShieldCheck className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-center">First-Time Email Verification</CardTitle>
+                    <CardDescription className="text-center text-xs">
+                      To secure your account, please verify your email address. We sent a 6-digit code to:
+                      <span className="block font-semibold text-foreground mt-1 text-sm">
+                        {maskedEmail}
+                      </span>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {successMessage && (
+                      <div className="p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span>{successMessage}</span>
+                      </div>
+                    )}
 
-              {error && <div className="p-3 mb-4 text-sm text-red-500 bg-red-100 rounded-lg">{error}</div>}
+                    {error && (
+                      <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+                        {error}
+                      </div>
+                    )}
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <label htmlFor="username" className="text-sm font-medium leading-none text-foreground">
-                    {role === 'admin' ? 'Email Address' : 'Student ID / Email / Phone'}
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                    <Input 
-                      id="username"
-                      name="username"
-                      autoComplete="username"
-                      type="text" 
-                      placeholder={role === 'admin' ? 'admin@hostel.com' : 'STU-2026-001 / 9876543210'} 
-                      className="pl-10 h-11"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="text-sm font-medium leading-none text-foreground">
-                      Password
-                    </label>
-                    <a href="#" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
-                      Forgot password?
-                    </a>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
-                    <Input 
-                      id="password"
-                      name="password"
-                      autoComplete="current-password"
-                      type="password" 
-                      placeholder="••••••••" 
-                      className="pl-10 h-11"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
+                    <form onSubmit={handleVerifyFirstLoginOtp} className="space-y-5">
+                      <div>
+                        <label htmlFor="firstOtpBox-0" className="text-xs font-semibold block text-center mb-3 text-foreground">
+                          Enter 6-Digit Verification Code
+                        </label>
+                        
+                        <div className="flex justify-center items-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
+                          {otp.map((digit, index) => (
+                            <input
+                              key={index}
+                              ref={(el) => (otpInputRefs.current[index] = el)}
+                              id={'firstOtpBox-' + index}
+                              name={'firstOtpBox-' + index}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleOtpChange(index, e.target.value)}
+                              onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                              className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border border-border bg-black/[0.03] dark:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                              required
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-center text-black/50 dark:text-white/50 block mt-2">
+                          Once verified, future logins will sign in directly.
+                        </span>
+                      </div>
 
-                <Button type="submit" className="w-full h-11 text-base gap-2 mt-4" size="lg">
-                  Sign In <ArrowRight className="w-4 h-4" />
-                </Button>
-              </form>
-            </CardContent>
+                      <Button 
+                        type="submit" 
+                        disabled={loading || otp.join('').length < 6}
+                        className="w-full h-11 text-sm font-semibold gap-2 shadow-md shadow-primary-500/20" 
+                        size="lg"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Verifying Code...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" /> Verify Email & Sign In
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Resend & Back Actions */}
+                      <div className="pt-2 flex flex-col items-center gap-3 border-t border-border text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-black/60 dark:text-white/60">Didn't receive the email?</span>
+                          {canResend ? (
+                            <button
+                              type="button"
+                              onClick={handleResendLoginOtp}
+                              disabled={resendLoading}
+                              className="font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              {resendLoading ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" /> Sending...
+                                </>
+                              ) : (
+                                'Resend Code'
+                              )}
+                            </button>
+                          ) : (
+                            <span className="font-semibold text-black/40 dark:text-white/40">
+                              Resend in {resendTimer}s
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleBackToLogin}
+                          className="text-black/60 dark:text-white/60 hover:text-foreground hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
+                        </button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </motion.div>
+              )}
+
+              {step === 'forgot_request' && (
+                /* STEP 3: Forgot Password - Request Reset Code */
+                <motion.div
+                  key="forgot-request-step"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CardHeader className="space-y-1 pb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-2">
+                      <KeyRound className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-center">Reset Password</CardTitle>
+                    <CardDescription className="text-center text-xs">
+                      Enter your account details to receive a 6-digit password reset verification code on your registered email.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Role Selection Toggle */}
+                    <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg mb-2">
+                      <button
+                        type="button"
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${role === 'student' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+                        onClick={() => setRole('student')}
+                      >
+                        Student
+                      </button>
+                      <button
+                        type="button"
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${role === 'admin' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-black/60 dark:text-white/60 hover:text-foreground'}`}
+                        onClick={() => setRole('admin')}
+                      >
+                        Admin
+                      </button>
+                    </div>
+
+                    {error && (
+                      <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+                        {error}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label htmlFor="forgotIdentifier" className="text-xs font-semibold block text-foreground">
+                          {role === 'admin' ? 'Registered Email Address *' : 'Student ID / Registered Email / Phone *'}
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="forgotIdentifier"
+                            name="forgotIdentifier"
+                            type="text" 
+                            placeholder={role === 'admin' ? 'admin@example.com' : 'STU-2026-001 / 9876543210'} 
+                            className="pl-10 h-11 text-sm"
+                            value={forgotEmail}
+                            onChange={(e) => setForgotEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        disabled={loading || !forgotEmail}
+                        className="w-full h-11 text-sm font-semibold gap-2 mt-2 shadow-md shadow-amber-500/20 bg-amber-600 hover:bg-amber-700 text-white" 
+                        size="lg"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Sending Reset Code...
+                          </>
+                        ) : (
+                          <>
+                            Send Reset Code <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="pt-2 text-center border-t border-border">
+                        <button
+                          type="button"
+                          onClick={handleBackToLogin}
+                          className="text-xs text-black/60 dark:text-white/60 hover:text-foreground hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
+                        </button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </motion.div>
+              )}
+
+              {step === 'forgot_verify' && (
+                /* STEP 4: Forgot Password - Enter OTP & New Password */
+                <motion.div
+                  key="forgot-verify-step"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CardHeader className="space-y-1 pb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-2">
+                      <Lock className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-center">Set New Password</CardTitle>
+                    <CardDescription className="text-center text-xs">
+                      Enter the 6-digit code sent to:
+                      <span className="block font-semibold text-foreground mt-1 text-sm">
+                        {maskedEmail}
+                      </span>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {successMessage && (
+                      <div className="p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span>{successMessage}</span>
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+                        {error}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                      <div>
+                        <label htmlFor="resetOtpBox-0" className="text-xs font-semibold block text-center mb-2.5 text-foreground">
+                          Enter 6-Digit Password Reset Code
+                        </label>
+                        
+                        <div className="flex justify-center items-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
+                          {otp.map((digit, index) => (
+                            <input
+                              key={index}
+                              ref={(el) => (otpInputRefs.current[index] = el)}
+                              id={'resetOtpBox-' + index}
+                              name={'resetOtpBox-' + index}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleOtpChange(index, e.target.value)}
+                              onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                              className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border border-border bg-black/[0.03] dark:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                              required
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="resetNewPassword" className="text-xs font-semibold block text-foreground">
+                          New Password * (Min 6 characters)
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="resetNewPassword"
+                            name="resetNewPassword"
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder="••••••••" 
+                            className="pl-10 pr-10 h-10 text-sm"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-2.5 text-black/40 dark:text-white/40 hover:text-foreground cursor-pointer"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="resetConfirmPassword" className="text-xs font-semibold block text-foreground">
+                          Confirm New Password *
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-3 h-4 w-4 text-black/40 dark:text-white/40" />
+                          <Input 
+                            id="resetConfirmPassword"
+                            name="resetConfirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••••" 
+                            className="pl-10 pr-10 h-10 text-sm"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-2.5 text-black/40 dark:text-white/40 hover:text-foreground cursor-pointer"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        disabled={loading || otp.join('').length < 6 || !newPassword || !confirmPassword}
+                        className="w-full h-11 text-sm font-semibold gap-2 mt-2 shadow-md shadow-amber-500/20 bg-amber-600 hover:bg-amber-700 text-white" 
+                        size="lg"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Resetting Password...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" /> Reset Password & Continue
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Resend & Back Actions */}
+                      <div className="pt-2 flex flex-col items-center gap-3 border-t border-border text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-black/60 dark:text-white/60">Didn't receive the reset code?</span>
+                          {canResend ? (
+                            <button
+                              type="button"
+                              onClick={handleResendResetOtp}
+                              disabled={resendLoading}
+                              className="font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              {resendLoading ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" /> Sending...
+                                </>
+                              ) : (
+                                'Resend Code'
+                              )}
+                            </button>
+                          ) : (
+                            <span className="font-semibold text-black/40 dark:text-white/40">
+                              Resend in {resendTimer}s
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleBackToLogin}
+                          className="text-black/60 dark:text-white/60 hover:text-foreground hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
+                        </button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
         </motion.div>
       </div>

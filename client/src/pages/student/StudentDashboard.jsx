@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { IndianRupee, Clock, MapPin, CalendarDays, ArrowRight, Calendar, BookOpen } from 'lucide-react';
+import { IndianRupee, Clock, MapPin, CalendarDays, ArrowRight, Calendar, BookOpen, ScrollText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -256,6 +256,31 @@ const StudentDashboard = () => {
                 </div>
                 <div className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 font-semibold">
                   <span>View</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <Card 
+              className="cursor-pointer border-indigo-200/80 dark:border-indigo-900/40 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors shadow-sm bg-gradient-to-r from-indigo-50/30 via-card to-card dark:from-indigo-950/20" 
+              onClick={() => navigate('/student/rules')}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <ScrollText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-black/50 dark:text-white/50 font-medium">Hostel Guidelines</p>
+                    <p className="text-sm font-bold text-foreground">
+                      છાત્રાલયના નિયમો (Rules)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+                  <span>Read</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </CardContent>

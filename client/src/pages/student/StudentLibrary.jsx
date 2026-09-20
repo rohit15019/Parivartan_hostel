@@ -16,7 +16,11 @@ import {
   MapPin,
   ChevronDown,
   Building,
-  UserCheck
+  UserCheck,
+  Smartphone,
+  Utensils,
+  Lightbulb,
+  ShieldAlert
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
@@ -100,20 +104,20 @@ const StudentLibrary = () => {
 
   const faqs = [
     {
-      q: 'How do I get a library seat assigned to me?',
-      a: 'Library seats are allocated by the Hostel Admin / Warden. You can request a seat assignment by visiting the administrative office or raising a request in Change Requests.'
+      q: 'મને લાઈબ્રેરી સીટ કેવી રીતે ફાળવવામાં આવશે?',
+      a: 'લાઈબ્રેરી સીટ હોસ્ટેલ વહીવટી વિભાગ / વોર્ડન દ્વારા ફાળવવામાં આવે છે. તમે એડમિન ઓફિસનો સંપર્ક કરીને અથવા પ્રોફાઇલ રિક્વેસ્ટ દ્વારા સીટ ફાળવણીની અરજી કરી શકો છો.'
     },
     {
-      q: 'Can I swap or change my allocated seat?',
-      a: 'Yes, if an empty seat is available, you can submit a seat change request to the hostel administration.'
+      q: 'શું હું મારી ફાળવેલી સીટ બદલી શકું છું?',
+      a: 'હા, જો અન્ય કોઈ ખાલી (Vacant) સીટ ઉપલબ્ધ હોય તો તમે હોસ્ટેલ એડમિનને અરજી કરીને સીટ બદલવાની વિનંતી કરી શકો છો.'
     },
     {
-      q: 'Can I leave my books on the desk overnight?',
-      a: 'Yes, if you hold an officially assigned seat, you can keep your study material on your desk. However, keep personal valuables safely in your room.'
+      q: 'શું હું મારા પુસ્તકો રાત્રે ડેસ્ક પર રાખી શકું છું?',
+      a: 'હા, જે વિદ્યાર્થીઓને કાયમી સીટ ફાળવેલી છે તેઓ પોતાના પુસ્તકો ડેસ્ક પર વ્યવસ્થિત રાખી શકે છે. જોકે રોકડ કે કિંમતી સામાન ડેસ્ક પર રાખવો નહીં.'
     },
     {
-      q: 'What should I do if someone else is occupying my assigned seat?',
-      a: 'Kindly inform the peer that the seat is reserved. If unresolved, please contact the library coordinator or warden.'
+      q: 'જો કોઈ અન્ય વ્યક્તિ મારી સીટ પર બેઠી હોય તો શું કરવું?',
+      a: 'તમે નમ્રતાપૂર્વક તેમને સીટ રિઝર્વ હોવાની જાણ કરી શકો છો અથવા લાઈબ્રેરી કોઓર્ડિનેટર/વોર્ડનનો સંપર્ક કરી શકો છો.'
     }
   ];
 
@@ -310,6 +314,9 @@ const StudentLibrary = () => {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-black/40 dark:text-white/40" />
               <Input
+                id="searchSeatNumber"
+                name="searchSeatNumber"
+                aria-label="Search seat number"
                 placeholder="Search seat number..."
                 className="pl-9 h-9 text-xs"
                 value={searchTerm}
@@ -351,6 +358,9 @@ const StudentLibrary = () => {
               {/* Section Filter */}
               {sections.length > 2 && (
                 <select
+                  id="sectionFilter"
+                  name="sectionFilter"
+                  aria-label="Filter by section"
                   value={sectionFilter}
                   onChange={(e) => setSectionFilter(e.target.value)}
                   className="h-9 px-3 text-xs rounded-lg border border-border bg-background"
@@ -439,53 +449,97 @@ const StudentLibrary = () => {
         </CardContent>
       </Card>
 
-      {/* Two Column Section: Code of Conduct + FAQs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Rules & Guidelines */}
-        <Card className="h-full flex flex-col">
-          <CardHeader className="pb-3 border-b border-border">
-            <CardTitle className="text-base flex items-center gap-2">
-              <VolumeX className="w-4 h-4 text-red-500" /> Library Code of Conduct
-            </CardTitle>
+      {/* Two Column Section: Gujarati Library Rules + FAQs */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Library Rules & Guidelines in Gujarati */}
+        <Card className="lg:col-span-7 flex flex-col">
+          <CardHeader className="pb-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-foreground">
+                <VolumeX className="w-5 h-5 text-red-500" />
+                <span>લાઈબ્રેરીના નિયમો (Library Rules)</span>
+              </CardTitle>
+              <Badge variant="danger" className="text-[11px] font-bold">
+                ચુસ્ત પાલન ફરજિયાત
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-black/60 dark:text-white/60">
+              વાંચન માટે શાંત અને શિસ્તબદ્ધ વાતાવરણ જાળવવા નીચેના નિયમોનું પાલન કરવું.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="pt-4 space-y-2.5 text-xs text-black/70 dark:text-white/70 flex-1">
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-red-50/50 dark:bg-red-950/20 text-red-800 dark:text-red-300 border border-red-100 dark:border-red-900/30">
-              <VolumeX className="w-4 h-4 shrink-0 mt-0.5" />
-              <span><strong>Strict Silence:</strong> Phone calls or group discussions inside the reading hall are strictly prohibited.</span>
+          <CardContent className="pt-4 space-y-3 text-xs text-foreground flex-1">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-red-50/70 dark:bg-red-950/30 text-red-900 dark:text-red-200 border border-red-200/80 dark:border-red-900/50">
+              <VolumeX className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-red-700 dark:text-red-300">૧. સંપૂર્ણ શાંતિ જાળવવી (Strict Silence):</strong>
+                <span className="text-[11px] leading-relaxed">લાઈબ્રેરી રીડિંગ હોલમાં શાંતિ જાળવવી ફરજિયાત છે. મોટા અવાજે વાતચીત કે ગ્રુપ ડિસ્કશન કરવું સખત પ્રતિબંધિત છે.</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/5 dark:bg-white/5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span><strong>Keep Devices on Silent:</strong> All mobile phones and laptops must remain on silent or vibrate mode.</span>
+
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-900/50">
+              <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-amber-700 dark:text-amber-300">૨. મોબાઈલ સાયલન્ટ મોડ (Mobile Silent):</strong>
+                <span className="text-[11px] leading-relaxed">મોબાઈલ ફરજિયાત સાયલન્ટ અથવા વાઇબ્રેટ રાખવો. હોલની અંદર ફોન પર વાત કરવાની સખત મનાઈ છે.</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/5 dark:bg-white/5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span><strong>Desk Courtesy:</strong> Please keep your study desk clean. Do not leave food items or tea cups on desks.</span>
+
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 border border-purple-200/80 dark:border-purple-900/50">
+              <Armchair className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-purple-700 dark:text-purple-300">૩. ફાળવેલી સીટ પર જ બેસવું (Allocated Seat Only):</strong>
+                <span className="text-[11px] leading-relaxed">દરેક વિદ્યાર્થીએ પોતાને એલોટ કરેલ સીટ નંબર પર જ બેસવું. અન્યની સીટ પર બેસવું નહીં.</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/5 dark:bg-white/5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span><strong>24 x 7 CCTV Coverage:</strong> Round the clock surveillance for safety and discipline.</span>
+
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200 border border-rose-200/80 dark:border-rose-900/50">
+              <Utensils className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-rose-700 dark:text-rose-300">૪. ખાદ્ય પદાર્થોની મનાઈ (No Food):</strong>
+                <span className="text-[11px] leading-relaxed">રીડિંગ ડેસ્ક પર ચા, નાસ્તો કે ખોરાક લાવવો નહીં. માત્ર પાણીની બોટલ રાખી શકાશે.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 border border-emerald-200/80 dark:border-emerald-900/50">
+              <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-emerald-700 dark:text-emerald-300">૫. સ્વચ્છતા & વીજળી બચત (Cleanliness & Energy):</strong>
+                <span className="text-[11px] leading-relaxed">ડેસ્ક સ્વચ્છ રાખવું અને સીટ છોડતી વખતે વ્યક્તિગત લાઈટ-સ્વિચ બંધ કરવી.</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-border">
+              <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold">૬. CCTV સર્વેલન્સ & શિસ્તભંગ કાર્યવાહી:</strong>
+                <span className="text-[11px] leading-relaxed">સમગ્ર હોલ ૨૪x૭ CCTV કેમેરાની નજર હેઠળ છે. શિસ્તભંગ કરનારની સીટ તાત્કાલિક રદ કરવામાં આવશે.</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* FAQs Accordion */}
-        <Card className="h-full flex flex-col">
-          <CardHeader className="pb-3 border-b border-border">
-            <CardTitle className="text-base flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-primary-500" /> Frequently Asked Questions
+        <Card className="lg:col-span-5 flex flex-col">
+          <CardHeader className="pb-4 border-b border-border">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-foreground">
+              <HelpCircle className="w-5 h-5 text-primary-500" />
+              <span>વારંવાર પૂછાતા પ્રશ્નો (FAQs)</span>
             </CardTitle>
+            <CardDescription className="text-xs text-black/60 dark:text-white/60">
+              સીટ ફાળવણી અને લાઈબ્રેરી અંગેની માહિતી
+            </CardDescription>
           </CardHeader>
-          <CardContent className="pt-4 space-y-2 flex-1">
+          <CardContent className="pt-4 space-y-2.5 flex-1">
             {faqs.map((faq, idx) => {
               const isOpen = activeFaq === idx;
               return (
-                <div key={idx} className="border border-border/60 rounded-xl overflow-hidden">
+                <div key={idx} className="border border-border/70 rounded-2xl overflow-hidden transition-colors">
                   <button
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full text-left p-3 text-xs font-semibold flex items-center justify-between gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                    className="w-full text-left p-3.5 text-xs font-bold flex items-center justify-between gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground"
                   >
                     <span>{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 shrink-0 text-black/40 dark:text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 shrink-0 text-black/40 dark:text-white/40 transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary-500' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {isOpen && (
@@ -493,7 +547,8 @@ const StudentLibrary = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-3 pb-3 text-xs text-black/60 dark:text-white/60 border-t border-border/40 pt-2 bg-black/[0.02] dark:bg-white/[0.02]"
+                        transition={{ duration: 0.2 }}
+                        className="px-3.5 pb-3.5 text-xs text-black/70 dark:text-white/70 border-t border-border/40 pt-2.5 bg-black/[0.02] dark:bg-white/[0.02] leading-relaxed"
                       >
                         {faq.a}
                       </motion.div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, IndianRupee, History, CalendarDays, BedDouble, Settings, FileText, User as UserIcon, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, IndianRupee, History, CalendarDays, BedDouble, Settings, FileText, User as UserIcon, BookOpen, ScrollText } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/auth/Login';
@@ -28,6 +28,7 @@ import StudentLibrary from './pages/student/StudentLibrary';
 import StudentLeaveRequest from './pages/student/StudentLeaveRequest';
 import StudentFees from './pages/student/StudentFees';
 import StudentReports from './pages/student/StudentReports';
+import StudentRules from './pages/student/StudentRules';
 
 const adminMenu = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -48,6 +49,7 @@ const studentMenu = [
   { path: '/student/fees', label: 'My Fees', icon: IndianRupee },
   { path: '/student/leaves', label: 'Leave Request', icon: CalendarDays },
   { path: '/student/reports', label: 'Reports', icon: FileText },
+  { path: '/student/rules', label: 'Rules', icon: ScrollText },
 ];
 
 function App() {
@@ -84,6 +86,7 @@ function App() {
                 <Route path="/student/fees" element={<StudentFees />} />
                 <Route path="/student/leaves" element={<StudentLeaveRequest />} />
                 <Route path="/student/reports" element={<StudentReports />} />
+                <Route path="/student/rules" element={<StudentRules />} />
               </Route>
             </Route>
 

@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   IndianRupee, 
-  History, 
   CreditCard, 
   Calendar, 
-  FileText, 
   User, 
   AlertTriangle, 
   CheckCircle2, 
@@ -39,7 +37,7 @@ const FeeManagement = () => {
   // Full monthly fee data response
   const [feeDetails, setFeeDetails] = useState(null);
   const [loadingFee, setLoadingFee] = useState(false);
-  const [activeTab, setActiveTab] = useState('breakdown'); // 'breakdown' | 'payments' | 'record'
+  const [activeTab, setActiveTab] = useState('breakdown'); // 'breakdown' | 'record'
 
   // Payment Form
   const [paymentForm, setPaymentForm] = useState({
@@ -54,7 +52,10 @@ const FeeManagement = () => {
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [editRateForm, setEditRateForm] = useState({
     monthlyFee: 6000,
-    feeDueDay: 10
+    feeDueDay: 10,
+    isPermanentRateChange: false,
+    targetMonthYear: '',
+    targetMonthName: ''
   });
 
   // Refresh all students fees state
@@ -112,12 +113,7 @@ const FeeManagement = () => {
       setFeeDetails(data);
       if (data.student) {
         setStudentDetail(data.student);
-        setEditRateForm({
-          monthlyFee: data.student.monthlyFee || 6000,
-          feeDueDay: data.student.feeDueDay || 10
-        });
       }
-      setCurrentPaymentPage(1);
     } catch (error) {
       console.error('Failed to fetch fee details:', error);
     } finally {
@@ -135,6 +131,25 @@ const FeeManagement = () => {
     const sId = item.student._id || item.student.id;
     setSelectedStudentId(sId);
     setStudentDetail(item.student);
+  };
+
+  // Open Adjust Fee modal for current or specific month
+  const openRateModal = (targetMonth = null) => {
+    const activeMonthRecord = feeDetails?.currentMonth;
+    const defaultAmount = targetMonth 
+      ? targetMonth.amount 
+      : (activeMonthRecord?.amount || studentDetail?.monthlyFee || 6000);
+    const targetMY = targetMonth ? targetMonth.monthYear : (activeMonthRecord?.monthYear || '');
+    const targetMN = targetMonth ? targetMonth.monthName : (activeMonthRecord?.monthName || 'Current Month');
+    
+    setEditRateForm({
+      monthlyFee: defaultAmount,
+      feeDueDay: studentDetail?.feeDueDay || 10,
+      isPermanentRateChange: false,
+      targetMonthYear: targetMY,
+      targetMonthName: targetMN
+    });
+    setIsRateModalOpen(true);
   };
 
   // Filter students in sidebar
@@ -179,15 +194,16 @@ const FeeManagement = () => {
   const handleSaveMonthlyRate = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/fees/${selectedStudentId}`, {
+      const res = await api.put(`/fees/${selectedStudentId}`, {
         monthlyFee: Number(editRateForm.monthlyFee),
         feeDueDay: Number(editRateForm.feeDueDay),
-        updateCurrentMonth: true
+        isPermanentRateChange: Boolean(editRateForm.isPermanentRateChange),
+        targetMonthYear: editRateForm.targetMonthYear || undefined
       });
-      alert('Monthly fee rate updated successfully!');
+      alert(res.data?.message || 'Monthly fee adjusted successfully!');
       setIsRateModalOpen(false);
-      fetchStudentFeeDetails(selectedStudentId);
-      fetchAllStudentFees();
+      await fetchStudentFeeDetails(selectedStudentId);
+      await fetchAllStudentFees();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update rate');
     }
@@ -407,21 +423,28 @@ const FeeManagement = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-2.5 rounded-xl border border-border">
-                    <div className="text-right">
-                      <span className="block text-[10px] uppercase font-bold text-black/50 dark:text-white/50">Monthly Rate</span>
-                      <span className="text-sm font-extrabold text-primary-600 dark:text-primary-400">
+                  <div className="flex flex-wrap items-center gap-2.5 bg-black/5 dark:bg-white/5 p-2.5 rounded-xl border border-border">
+                    <div className="text-right pr-1">
+                      <span className="block text-[10px] uppercase font-bold text-black/50 dark:text-white/50">Standard Rate</span>
+                      <span className="text-xs font-bold text-foreground">
                         ₹{Number(studentDetail?.monthlyFee || 6000).toLocaleString()} / mo
+                      </span>
+                    </div>
+                    <div className="h-7 w-[1px] bg-border hidden sm:block"></div>
+                    <div className="text-right">
+                      <span className="block text-[10px] uppercase font-bold text-primary-600 dark:text-primary-400">{currentMonthName}</span>
+                      <span className="text-sm font-extrabold text-primary-600 dark:text-primary-400">
+                        ₹{Number(currentMonth?.amount || studentDetail?.monthlyFee || 6000).toLocaleString()}
                       </span>
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setIsRateModalOpen(true)}
+                      onClick={() => openRateModal()}
                       className="h-8 px-2.5 text-xs gap-1 border-border"
-                      title="Adjust Monthly Fee Rate"
+                      title="Adjust Fee for Current Month"
                     >
-                      <Edit3 className="w-3.5 h-3.5" /> Edit Rate
+                      <Edit3 className="w-3.5 h-3.5" /> Adjust Fee
                     </Button>
                   </div>
                 </div>
@@ -544,7 +567,7 @@ const FeeManagement = () => {
                   </CardHeader>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-left text-xs">
                       <thead className="bg-black/5 dark:bg-white/5 uppercase text-black/60 dark:text-white/60 font-semibold border-b border-border">
                         <tr>
                           <th className="px-4 py-3">Billing Cycle / Month</th>
@@ -553,6 +576,7 @@ const FeeManagement = () => {
                           <th className="px-4 py-3">Pending Due</th>
                           <th className="px-4 py-3">Due Date</th>
                           <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3 text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -610,6 +634,17 @@ const FeeManagement = () => {
                               <td className="px-4 py-3">
                                 {getStatusBadge(mf.status)}
                               </td>
+                              <td className="px-4 py-3 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openRateModal(mf)}
+                                  className="h-7 px-2 text-[11px] gap-1 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/40"
+                                  title={`Adjust fee amount for ${mf.monthName}`}
+                                >
+                                  <Edit3 className="w-3 h-3" /> Adjust
+                                </Button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -652,10 +687,12 @@ const FeeManagement = () => {
                     <form onSubmit={handleRecordPayment} className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold block text-foreground">
+                          <label htmlFor="recordFeeAmount" className="text-xs font-semibold block text-foreground">
                             Payment Amount (₹) *
                           </label>
                           <Input 
+                            id="recordFeeAmount"
+                            name="recordFeeAmount"
                             type="number"
                             min="1"
                             placeholder="e.g. 6000"
@@ -667,10 +704,12 @@ const FeeManagement = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold block text-foreground">
+                          <label htmlFor="recordFeePaymentDate" className="text-xs font-semibold block text-foreground">
                             Payment Date *
                           </label>
                           <Input 
+                            id="recordFeePaymentDate"
+                            name="recordFeePaymentDate"
                             type="date"
                             required
                             value={paymentForm.paymentDate}
@@ -682,10 +721,12 @@ const FeeManagement = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold block text-foreground">
+                          <label htmlFor="recordFeePaymentMethod" className="text-xs font-semibold block text-foreground">
                             Payment Method *
                           </label>
                           <select
+                            id="recordFeePaymentMethod"
+                            name="recordFeePaymentMethod"
                             value={paymentForm.paymentMethod}
                             onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
                             className="w-full h-10 px-3 text-xs rounded-xl border border-border bg-background"
@@ -698,10 +739,12 @@ const FeeManagement = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold block text-foreground">
+                          <label htmlFor="recordFeeTransactionId" className="text-xs font-semibold block text-foreground">
                             Transaction / Ref Number
                           </label>
                           <Input 
+                            id="recordFeeTransactionId"
+                            name="recordFeeTransactionId"
                             placeholder="e.g. UPI Ref: 329182391283"
                             value={paymentForm.transactionId}
                             onChange={(e) => setPaymentForm({ ...paymentForm, transactionId: e.target.value })}
@@ -711,10 +754,12 @@ const FeeManagement = () => {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold block text-foreground">
+                        <label htmlFor="recordFeeNotes" className="text-xs font-semibold block text-foreground">
                           Notes / Remarks (Optional)
                         </label>
                         <Input 
+                          id="recordFeeNotes"
+                          name="recordFeeNotes"
                           placeholder="e.g. Paid in cash by student father"
                           value={paymentForm.notes}
                           onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
@@ -756,7 +801,7 @@ const FeeManagement = () => {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Edit3 className="w-4 h-4 text-primary-600" />
-                  Adjust Monthly Fee Rate
+                  Adjust Fee ({editRateForm.targetMonthName || currentMonthName})
                 </h3>
                 <button 
                   onClick={() => setIsRateModalOpen(false)}
@@ -766,10 +811,25 @@ const FeeManagement = () => {
                 </button>
               </div>
 
+              {/* Standard Base Rate Indicator & 1-Month Reset Explanation */}
+              <div className="bg-primary-50 dark:bg-primary-950/40 border border-primary-200 dark:border-primary-800/40 rounded-xl p-3 text-xs space-y-1">
+                <div className="flex justify-between items-center text-primary-800 dark:text-primary-300 font-semibold">
+                  <span>Student Profile Base Rate:</span>
+                  <span className="text-sm font-bold">₹{Number(studentDetail?.monthlyFee || 6000).toLocaleString()} / month</span>
+                </div>
+                <p className="text-[11px] text-primary-700/80 dark:text-primary-300/70">
+                  ℹ️ This fee adjustment applies to <strong>{editRateForm.targetMonthName || 'this month'}</strong>. Subsequent months will automatically reset to the base rate (<strong>₹{Number(studentDetail?.monthlyFee || 6000).toLocaleString()}</strong>).
+                </p>
+              </div>
+
               <form onSubmit={handleSaveMonthlyRate} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold block mb-1">Monthly Fee Rate (₹) *</label>
+                  <label htmlFor="editMonthlyFeeRate" className="text-xs font-semibold block mb-1">
+                    Fee Amount for {editRateForm.targetMonthName || 'Selected Month'} (₹) *
+                  </label>
                   <Input 
+                    id="editMonthlyFeeRate"
+                    name="editMonthlyFeeRate"
                     type="number"
                     min="0"
                     required
@@ -777,13 +837,15 @@ const FeeManagement = () => {
                     onChange={(e) => setEditRateForm({ ...editRateForm, monthlyFee: e.target.value })}
                   />
                   <span className="text-[11px] text-black/50 dark:text-white/50 block mt-1">
-                    Standard monthly fee rate for this student.
+                    Adjust fee for this specific month.
                   </span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold block mb-1">Fee Due Day of Month *</label>
+                  <label htmlFor="editFeeDueDay" className="text-xs font-semibold block mb-1">Fee Due Day of Month *</label>
                   <Input 
+                    id="editFeeDueDay"
+                    name="editFeeDueDay"
                     type="number"
                     min="1"
                     max="28"
@@ -794,6 +856,25 @@ const FeeManagement = () => {
                   <span className="text-[11px] text-black/50 dark:text-white/50 block mt-1">
                     Day of the month the fee is due (1 to 28).
                   </span>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <label htmlFor="isPermanentRateChange" className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input 
+                      type="checkbox"
+                      id="isPermanentRateChange"
+                      name="isPermanentRateChange"
+                      checked={editRateForm.isPermanentRateChange || false}
+                      onChange={(e) => setEditRateForm({ ...editRateForm, isPermanentRateChange: e.target.checked })}
+                      className="mt-0.5 rounded text-primary-600 focus:ring-primary-500"
+                    />
+                    <div className="text-xs">
+                      <span className="font-semibold text-foreground">Also update base profile rate for all future months</span>
+                      <p className="text-[11px] text-muted-foreground">
+                        If unchecked, this change applies ONLY to {editRateForm.targetMonthName || 'this month'} and resets next month.
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2 border-t border-border">

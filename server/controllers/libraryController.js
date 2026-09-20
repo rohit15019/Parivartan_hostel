@@ -1,6 +1,7 @@
 const LibrarySeat = require('../models/LibrarySeat');
 const Student = require('../models/Student');
 const Fee = require('../models/Fee');
+const Payment = require('../models/Payment');
 
 // @desc    Get all library seats with student details
 // @route   GET /api/library/seats
@@ -97,7 +98,16 @@ const addLibrarySeat = async (req, res) => {
 // @access  Private/Admin
 const assignLibrarySeat = async (req, res) => {
   try {
-    const { studentId, feePaid = true, notes } = req.body;
+    const { 
+      studentId, 
+      feePaid = true, 
+      notes,
+      recordPayment: shouldRecordPayment,
+      paymentAmount,
+      paymentMethod = 'Cash',
+      transactionId,
+      paymentDate
+    } = req.body;
 
     const seat = await LibrarySeat.findById(req.params.id);
     if (!seat) {
@@ -126,9 +136,33 @@ const assignLibrarySeat = async (req, res) => {
       });
     }
 
+    // Optional Payment Record creation
+    let createdPayment = null;
+    const numAmount = Number(paymentAmount);
+
+    if (shouldRecordPayment && !isNaN(numAmount) && numAmount > 0) {
+      const paymentNotes = notes 
+        ? `Library Fee (Seat ${seat.seatNumber}): ${notes}` 
+        : `Library Fee (Seat ${seat.seatNumber})`;
+
+      createdPayment = await Payment.create({
+        studentId: student._id,
+        amount: numAmount,
+        paymentMethod: paymentMethod || 'Cash',
+        paymentType: 'Library Fee',
+        transactionId: transactionId ? transactionId.trim() : '',
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        notes: paymentNotes
+      });
+    }
+
     seat.studentId = studentId;
     seat.assignedDate = new Date();
-    seat.feePaid = feePaid === true || feePaid === 'true';
+    seat.feePaid = feePaid === true || feePaid === 'true' || Boolean(createdPayment);
+    if (createdPayment) {
+      seat.feeAmount = createdPayment.amount;
+      seat.paymentId = createdPayment._id;
+    }
     if (notes !== undefined) seat.notes = notes;
 
     await seat.save();
@@ -137,8 +171,9 @@ const assignLibrarySeat = async (req, res) => {
       .populate('studentId', 'name surname studentId phone roomNumber');
 
     res.json({
-      message: `Assigned seat ${seat.seatNumber} to ${student.name} ${student.surname || ''}`,
-      seat: populatedSeat
+      message: `Assigned seat ${seat.seatNumber} to ${student.name} ${student.surname || ''}${createdPayment ? ` and recorded ₹${createdPayment.amount.toLocaleString()} library fee payment!` : ' successfully.'}`,
+      seat: populatedSeat,
+      payment: createdPayment
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

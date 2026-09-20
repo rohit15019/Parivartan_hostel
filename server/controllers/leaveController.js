@@ -6,8 +6,11 @@ const Student = require('../models/Student');
 // @access  Private/Admin
 const getLeaveRequests = async (req, res) => {
   try {
-    const leaves = await LeaveRequest.find({})
-      .populate('studentId', 'name surname studentId roomNumber photo')
+    const leaves = await LeaveRequest.find({
+      fromDate: { $ne: null },
+      toDate: { $ne: null }
+    })
+      .populate('studentId', 'name surname studentId roomNumber photo phone fatherPhone')
       .sort({ createdAt: -1 });
     res.json(leaves);
   } catch (error) {
@@ -37,17 +40,28 @@ const submitLeaveRequest = async (req, res) => {
   const { leaveType, fromDate, toDate, days, reason, parentPhone } = req.body;
 
   try {
+    if (!fromDate) {
+      return res.status(400).json({ message: 'From Date is required' });
+    }
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Reason for leave is required' });
+    }
+
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) return res.status(404).json({ message: 'Student profile not found' });
 
+    const startDate = new Date(fromDate);
+    const endDate = toDate ? new Date(toDate) : startDate;
+    const leaveDays = days || 1;
+
     const leave = await LeaveRequest.create({
       studentId: student._id,
-      leaveType,
-      fromDate,
-      toDate,
-      days,
-      reason,
-      parentPhone: parentPhone || student.parentPhone
+      leaveType: leaveType || 'Home Visit',
+      fromDate: startDate,
+      toDate: endDate,
+      days: leaveDays,
+      reason: reason.trim(),
+      parentPhone: parentPhone || student.parentPhone || student.fatherPhone || ''
     });
 
     res.status(201).json(leave);

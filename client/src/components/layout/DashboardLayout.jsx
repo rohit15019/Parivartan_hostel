@@ -4,7 +4,7 @@ import { Building2, Menu, X, LogOut, Palette, ChevronDown, User, Shield } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import logoImg from '../../assets/logo.png';
+import logoImg from '../../assets/original.jpeg';
 
 const AshokaChakra = () => (
   <svg viewBox="0 0 100 100" className="w-6 h-6 text-[#000080] animate-[spin_10s_linear_infinite]">
@@ -147,13 +147,7 @@ const DashboardLayout = ({ menuItems, userRole, userName, userAvatar }) => {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg overflow-hidden bg-white p-0.5 shadow-xs border border-border flex items-center justify-center">
-                <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain" />
-              </div>
-              <span className="font-bold text-base tracking-tight">Parivartan</span>
-            </div>
-            <h2 className="hidden sm:block text-lg font-semibold tracking-tight">
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight">
               {userRole === 'admin' ? 'Hostel Administration' : 'Student Portal'}
             </h2>
           </div>

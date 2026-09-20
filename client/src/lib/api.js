@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Use environment variable if provided, otherwise fallback to relative '/api'
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL,
 });
 
 // Add a request interceptor to include the auth token

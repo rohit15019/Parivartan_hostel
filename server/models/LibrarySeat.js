@@ -29,6 +29,15 @@ const librarySeatSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  feeAmount: {
+    type: Number,
+    default: 0
+  },
+  paymentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment',
+    default: null
+  },
   notes: {
     type: String,
     default: ''

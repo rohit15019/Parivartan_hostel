@@ -218,6 +218,9 @@ const StudentProfile = () => {
                 title="Click to upload or change your photo"
               >
                 <input 
+                  id="studentProfilePhotoUpload"
+                  name="studentProfilePhotoUpload"
+                  aria-label="Upload student profile photo"
                   type="file" 
                   ref={fileInputRef} 
                   onChange={handlePhotoSelect} 

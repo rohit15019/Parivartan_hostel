@@ -28,7 +28,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { useTheme } from '../../context/ThemeContext';
 
 // Import hostel photos from assets
-import logoImg from '../../assets/logo.png';
+import logoImg from '../../assets/original.jpeg';
 import eventTrainingImg from '../../assets/event_training.jpg';
 import hostelCampusImg from '../../assets/hostel_campus.jpg';
 import hostelBuildingImg from '../../assets/hostel_building.jpg';
@@ -436,7 +436,7 @@ const AboutUs = () => {
         </section>
 
         {/* Contact Information & Administration */}
-        <section className="py-16 lg:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 text-xs font-bold uppercase tracking-wider">
               <Phone className="w-3.5 h-3.5" /> Reach Out
@@ -447,10 +447,10 @@ const AboutUs = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Address Card */}
             <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-5 sm:p-6 space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                   <MapPin className="w-5 h-5" />
                 </div>
@@ -463,7 +463,7 @@ const AboutUs = () => {
 
             {/* Direct Contact Card */}
             <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-5 sm:p-6 space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Phone className="w-5 h-5" />
                 </div>
@@ -485,18 +485,34 @@ const AboutUs = () => {
               </CardContent>
             </Card>
 
-            {/* Administration Spotlight */}
+            {/* Administration Spotlight - Vallabhbhai */}
             <Card className="border-border shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-card to-primary-50/30 dark:to-primary-950/30">
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-5 sm:p-6 space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-foreground">Hostel Administrator</h3>
-                <p className="text-lg font-extrabold text-foreground">
+                <p className="text-base lg:text-sm xl:text-base 2xl:text-lg font-extrabold text-foreground whitespace-nowrap tracking-tight" title="Vallabhbhai Dharajiya">
                   Vallabhbhai Dharajiya
                 </p>
                 <p className="text-xs text-black/60 dark:text-white/60">
                   Dedicated leadership ensuring student welfare, security, and scholastic excellence since 2012.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Administration Spotlight - Bhanuben */}
+            <Card className="border-border shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-card to-purple-50/30 dark:to-purple-950/30">
+              <CardContent className="p-5 sm:p-6 space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-foreground">Hostel Administrator</h3>
+                <p className="text-sm sm:text-base lg:text-[13px] xl:text-sm 2xl:text-base font-extrabold text-foreground whitespace-nowrap tracking-tight" title="Bhanuben Vallabhbhai Dharajiya">
+                  Bhanuben Vallabhbhai Dharajiya
+                </p>
+                <p className="text-xs text-black/60 dark:text-white/60">
+                  Dedicated management providing caring support, student guidance, and daily hostel administration.
                 </p>
               </CardContent>
             </Card>

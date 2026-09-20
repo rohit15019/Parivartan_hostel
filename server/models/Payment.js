@@ -8,6 +8,7 @@ const paymentSchema = new mongoose.Schema({
   },
   amount: { type: Number, required: true },
   paymentMethod: { type: String, enum: ['Cash', 'UPI', 'Bank Transfer', 'Cheque'], required: true },
+  paymentType: { type: String, default: 'Hostel Fee' },
   transactionId: { type: String }, // Optional ref number
   paymentDate: { type: Date, default: Date.now },
   notes: { type: String }

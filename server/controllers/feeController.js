@@ -77,8 +77,11 @@ const ensureMonthlyFeesForStudent = async (studentId) => {
   // Fetch all monthly fees for this student in ascending order
   const monthlyFees = await MonthlyFee.find({ studentId: student._id }).sort({ year: 1, month: 1 });
 
-  // Fetch all payments for this student
-  const payments = await Payment.find({ studentId: student._id }).sort({ paymentDate: 1, createdAt: 1 });
+  // Fetch all hostel room fee payments for this student (exclude separate library fees)
+  const payments = await Payment.find({ 
+    studentId: student._id,
+    paymentType: { $ne: 'Library Fee' }
+  }).sort({ paymentDate: 1, createdAt: 1 });
   const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   // Redistribute payments FIFO across monthly fees (oldest first)
@@ -190,6 +193,7 @@ const getStudentFeeDetails = async (req, res) => {
       totalFees: totalBilled,
       paidAmount: totalPaid,
       remainingAmount: totalPendingBalance,
+      standardMonthlyFee: Number(student.monthlyFee) || 6000,
       currentMonthFee: currentMonthRecord ? currentMonthRecord.amount : (student.monthlyFee || 6000),
       currentMonthPaid: currentMonthRecord ? currentMonthRecord.paidAmount : 0,
       currentMonthRemaining,
@@ -222,7 +226,7 @@ const getStudentFeeDetails = async (req, res) => {
 // @route   PUT /api/fees/:studentId
 // @access  Private/Admin
 const updateStudentFee = async (req, res) => {
-  const { monthlyFee, totalFees, dueDate, paymentFrequency, feeDueDay, updateCurrentMonth } = req.body;
+  const { monthlyFee, totalFees, dueDate, feeDueDay, isPermanentRateChange, targetMonthYear } = req.body;
 
   try {
     const student = await Student.findById(req.params.studentId);
@@ -230,30 +234,57 @@ const updateStudentFee = async (req, res) => {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    const newRate = Number(monthlyFee || totalFees);
-    if (!isNaN(newRate) && newRate > 0) {
+    const newRate = Number(monthlyFee !== undefined ? monthlyFee : totalFees);
+    if (isNaN(newRate) || newRate < 0) {
+      return res.status(400).json({ message: 'Please provide a valid fee amount' });
+    }
+
+    // Only update student.monthlyFee permanently if explicitly requested (e.g., student profile change)
+    if (isPermanentRateChange && newRate > 0) {
       student.monthlyFee = newRate;
     }
+
     if (feeDueDay !== undefined && !isNaN(feeDueDay)) {
       student.feeDueDay = Math.min(28, Math.max(1, Number(feeDueDay)));
     }
     await student.save();
 
-    // If updateCurrentMonth is true or new rate provided, update the active month's fee
+    // Determine target month to update (default to active current month)
     const now = new Date();
-    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const currentRecord = await MonthlyFee.findOne({ studentId: student._id, monthYear: currentMonthYear });
-    if (currentRecord && !isNaN(newRate) && newRate > 0) {
-      currentRecord.amount = newRate;
-      if (dueDate) currentRecord.dueDate = dueDate;
-      await currentRecord.save();
+    const currentMonthYear = targetMonthYear || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    let targetRecord = await MonthlyFee.findOne({ studentId: student._id, monthYear: currentMonthYear });
+    if (targetRecord) {
+      targetRecord.amount = newRate;
+      if (dueDate) targetRecord.dueDate = dueDate;
+      await targetRecord.save();
+    } else {
+      const [yStr, mStr] = currentMonthYear.split('-');
+      const y = parseInt(yStr, 10);
+      const m = parseInt(mStr, 10);
+      const monthName = `${MONTH_NAMES[m - 1]} ${y}`;
+      const dueDay = student.feeDueDay || 10;
+      targetRecord = await MonthlyFee.create({
+        studentId: student._id,
+        monthYear: currentMonthYear,
+        year: y,
+        month: m,
+        monthName,
+        amount: newRate,
+        paidAmount: 0,
+        dueDate: dueDate || new Date(y, m - 1, Math.min(dueDay, 28)),
+        status: 'PENDING'
+      });
     }
 
     const syncData = await ensureMonthlyFeesForStudent(student._id);
 
     res.json({
-      message: 'Monthly fee settings updated successfully',
+      message: isPermanentRateChange 
+        ? `Monthly fee rate permanently updated to ₹${newRate.toLocaleString()} for all months.`
+        : `Fee for ${targetRecord.monthName} updated to ₹${newRate.toLocaleString()}. Next month will automatically reset to the standard Monthly Fee Rate (₹${(student.monthlyFee || 6000).toLocaleString()}).`,
       student,
+      targetRecord,
       syncData
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, deleteStudent } = require('../controllers/studentController');
+const { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, changeStudentPassword, deleteStudent } = require('../controllers/studentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/profile')
@@ -16,5 +16,8 @@ router.route('/')
 router.route('/:id')
   .put(protect, admin, updateStudent)
   .delete(protect, admin, deleteStudent);
+
+router.route('/:id/password')
+  .put(protect, admin, changeStudentPassword);
 
 module.exports = router;
