@@ -145,10 +145,11 @@ const AboutUs = () => {
             </button>
             <Button 
               onClick={() => navigate('/login')} 
-              className="gap-2 font-bold shadow-md shadow-primary-500/20"
+              className="gap-2 font-bold shadow-md shadow-primary-500/20 text-xs sm:text-sm px-3 sm:px-4 cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
-              <span>Student / Admin Portal</span>
+              <span className="hidden sm:inline">Student / Admin Portal</span>
+              <span className="sm:hidden">Login</span>
             </Button>
           </div>
         </div>
