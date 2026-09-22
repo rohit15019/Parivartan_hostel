@@ -541,44 +541,67 @@ const Login = () => {
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background">
       {/* Top Mobile Bar (visible on < lg) */}
-      <div className="lg:hidden w-full sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-2 shadow-xs">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setMobileTab('login')}>
-          <div className="w-9 h-9 rounded-xl bg-white p-0.5 shadow-sm border border-border flex items-center justify-center shrink-0">
+      <div className="lg:hidden w-full sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 shadow-xs">
+        <div 
+          className="flex items-center gap-2 cursor-pointer shrink-0" 
+          onClick={() => {
+            setMobileTab('login');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white p-0.5 shadow-sm border border-border flex items-center justify-center shrink-0">
             <img src={logoImg} alt="Parivartan Logo" className="w-full h-full object-contain rounded-lg" />
           </div>
-          <div>
-            <span className="text-sm font-extrabold text-foreground block leading-tight">Parivartan Hostel</span>
-            <span className="text-[10px] text-black/50 dark:text-white/50 font-medium">Surendranagar</span>
+          <div className="hidden xs:block">
+            <span className="text-xs sm:text-sm font-extrabold text-foreground block leading-tight">Parivartan Hostel</span>
+            <span className="text-[9px] sm:text-[10px] text-black/50 dark:text-white/50 font-medium">Surendranagar</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Mode switcher pills on mobile */}
           <div className="flex p-0.5 bg-black/5 dark:bg-white/10 rounded-xl border border-border/50">
             <button
               type="button"
-              onClick={() => setMobileTab('login')}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              onClick={() => {
+                setMobileTab('login');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 mobileTab === 'login'
                   ? 'bg-primary-600 text-white shadow-xs'
                   : 'text-black/60 dark:text-white/60 hover:text-foreground'
               }`}
             >
-              Sign In
+              <LogIn className="w-3 h-3" />
+              <span>Sign In</span>
             </button>
             <button
               type="button"
-              onClick={() => setMobileTab('about')}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+              onClick={() => {
+                setMobileTab('about');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 mobileTab === 'about'
                   ? 'bg-primary-600 text-white shadow-xs'
                   : 'text-black/60 dark:text-white/60 hover:text-foreground'
               }`}
             >
               <Sparkles className="w-3 h-3 text-amber-300" />
-              About
+              <span>About Us</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/about')}
+            className="p-1.5 sm:px-2 sm:py-1.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/60 border border-primary-200 dark:border-primary-800 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+            title="Open Dedicated About Us Page"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">About Page</span>
+          </button>
 
           <button 
             type="button"
@@ -1198,79 +1221,42 @@ const Login = () => {
             </AnimatePresence>
           </Card>
 
-          {/* Mobile About Us Quick Access Teaser (Visible on mobile screens) */}
-          <div className="mt-6 pt-5 border-t border-border/70 lg:hidden space-y-3">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-indigo-950 text-white shadow-lg border border-primary-800/40 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-              <div className="flex items-center justify-between gap-2 mb-2.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-primary-200 border border-white/20 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" /> About Our Hostel
-                </span>
-                <span className="text-[11px] text-primary-300 font-mono">Est. 2012</span>
-              </div>
-
-              <h3 className="text-sm font-extrabold text-white mb-1">
-                Parivartan Hostel, Surendranagar
-              </h3>
-              <p className="text-xs text-primary-100/90 italic leading-relaxed mb-3">
-                “Social transformation is impossible without education.”
-              </p>
-
-              {/* Stat chips */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="p-2 rounded-xl bg-white/10 border border-white/10 text-center">
-                  <div className="text-sm font-black text-white">11,000+</div>
-                  <div className="text-[10px] text-primary-200 font-medium">Enrolled Students</div>
+          {/* Mobile Full About Us Section (Directly visible on mobile screens below login card) */}
+          <div className="mt-8 pt-6 border-t border-border/70 lg:hidden space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                  <Sparkles className="w-4 h-4 text-amber-300" />
                 </div>
-                <div className="p-2 rounded-xl bg-white/10 border border-white/10 text-center">
-                  <div className="text-sm font-black text-white">50+</div>
-                  <div className="text-[10px] text-primary-200 font-medium">Certified Trainers</div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-foreground leading-tight">About Parivartan Hostel</h3>
+                  <p className="text-[10px] text-black/50 dark:text-white/50">Surendranagar • Est. 2012</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate('/about')}
+                className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Full Page</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
 
-              {/* Photos strip */}
-              <div className="grid grid-cols-3 gap-1.5 mb-3">
-                <div className="aspect-square rounded-lg overflow-hidden bg-black/40">
-                  <img src={eventTrainingImg} alt="Training" className="w-full h-full object-cover" />
-                </div>
-                <div className="aspect-square rounded-lg overflow-hidden bg-black/40">
-                  <img src={hostelCampusImg} alt="Campus" className="w-full h-full object-cover" />
-                </div>
-                <div className="aspect-square rounded-lg overflow-hidden bg-black/40">
-                  <img src={hostelBuildingImg} alt="Building" className="w-full h-full object-cover" />
-                </div>
-              </div>
+            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-primary-950 via-primary-900 to-indigo-950 text-white shadow-xl border border-primary-800/40 relative overflow-hidden space-y-5">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-              {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setMobileTab('about')}
-                  className="flex-1 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition-all cursor-pointer"
-                >
-                  <span>Read Story & Vision</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+              <AboutUsContent onNavigateToAbout={() => navigate('/about')} />
+
+              <div className="pt-3 border-t border-white/15 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => navigate('/about')}
-                  className="flex-1 py-2 px-3 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                  className="w-full py-2.5 px-4 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                 >
-                  <span>Full Page & Gallery</span>
+                  <span>Open Full About Us Page & Gallery</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
-              </div>
-
-              {/* Contact line */}
-              <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-primary-200">
-                <span className="flex items-center gap-1">
-                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="truncate">Vallabhbhai Dharajiya</span>
-                </span>
-                <a href="tel:+919979999228" className="text-white hover:underline flex items-center gap-1 font-semibold">
-                  <Phone className="w-3 h-3 text-primary-300" /> +91 99799 99228
-                </a>
               </div>
             </div>
           </div>

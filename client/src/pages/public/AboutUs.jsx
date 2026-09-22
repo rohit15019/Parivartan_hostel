@@ -493,7 +493,7 @@ const AboutUs = () => {
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-foreground">Hostel Administrator</h3>
-                <p className="text-base lg:text-sm xl:text-base 2xl:text-lg font-extrabold text-foreground whitespace-nowrap tracking-tight" title="Vallabhbhai Dharajiya">
+                <p className="text-base sm:text-lg font-extrabold text-foreground break-words tracking-tight" title="Vallabhbhai Dharajiya">
                   Vallabhbhai Dharajiya
                 </p>
                 <p className="text-xs text-black/60 dark:text-white/60">
@@ -509,7 +509,7 @@ const AboutUs = () => {
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-foreground">Hostel Administrator</h3>
-                <p className="text-sm sm:text-base lg:text-[13px] xl:text-sm 2xl:text-base font-extrabold text-foreground whitespace-nowrap tracking-tight" title="Bhanuben Vallabhbhai Dharajiya">
+                <p className="text-base sm:text-lg font-extrabold text-foreground break-words tracking-tight" title="Bhanuben Vallabhbhai Dharajiya">
                   Bhanuben Vallabhbhai Dharajiya
                 </p>
                 <p className="text-xs text-black/60 dark:text-white/60">
