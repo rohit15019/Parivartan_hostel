@@ -747,7 +747,7 @@ const Login = () => {
                             name="loginIdentifier"
                             autoComplete="username"
                             type="text" 
-                            placeholder={role === 'admin' ? 'admin@example.com' : 'STU-2026-001 / 9876543210'} 
+                            placeholder={role === 'admin' ? 'vallabhdharejiya9@gmail.com' : 'STU-2026-001 / 9876543210'} 
                             className="pl-10 h-11 text-sm"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -985,7 +985,7 @@ const Login = () => {
                             id="forgotIdentifier"
                             name="forgotIdentifier"
                             type="text" 
-                            placeholder={role === 'admin' ? 'admin@example.com' : 'STU-2026-001 / 9876543210'} 
+                            placeholder={role === 'admin' ? 'vallabhdharejiya9@gmail.com' : 'STU-2026-001 / 9876543210'} 
                             className="pl-10 h-11 text-sm"
                             value={forgotEmail}
                             onChange={(e) => setForgotEmail(e.target.value)}

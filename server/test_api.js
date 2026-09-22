@@ -7,8 +7,8 @@ async function test() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@hostel.com',
-        password: 'admin123',
+        email: 'vallabhdharejiya9@gmail.com',
+        password: 'Admin@123',
         role: 'admin'
       })
     });

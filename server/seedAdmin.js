@@ -8,28 +8,49 @@ dotenv.config();
 const seedAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hostel_db');
-    console.log('MongoDB Connected for seeding');
+    console.log('MongoDB Connected for seeding admin');
 
-    const adminEmail = 'admin@hostel.com';
-    const adminExists = await User.findOne({ email: adminEmail });
+    const adminEmail = 'vallabhdharejiya9@gmail.com';
+    const adminPassword = 'Admin@123';
 
-    if (adminExists) {
-      console.log('Admin user already exists');
-      process.exit(0);
+    // Remove any previous non-official admin accounts to ensure ONLY vallabhdharejiya9@gmail.com is admin
+    const deletedAdmins = await User.deleteMany({
+      role: 'admin',
+      email: { $ne: adminEmail }
+    });
+    if (deletedAdmins.deletedCount > 0) {
+      console.log(`Cleaned up ${deletedAdmins.deletedCount} old admin account(s).`);
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('admin123', salt);
+    const hashedPassword = await bcrypt.hash(adminPassword, salt);
 
-    await User.create({
-      email: adminEmail,
-      password: hashedPassword,
-      role: 'admin'
-    });
+    let adminUser = await User.findOne({ email: adminEmail });
 
-    console.log('Admin user seeded successfully!');
-    console.log(`Email: ${adminEmail}`);
-    console.log('Password: admin123');
+    if (adminUser) {
+      adminUser.role = 'admin';
+      adminUser.password = hashedPassword;
+      adminUser.rawPassword = adminPassword;
+      adminUser.isEmailVerified = true;
+      adminUser.resetPasswordOtp = null;
+      adminUser.resetPasswordExpires = null;
+      await adminUser.save();
+      console.log(`Admin account updated successfully for: ${adminEmail}`);
+    } else {
+      adminUser = await User.create({
+        email: adminEmail,
+        password: hashedPassword,
+        rawPassword: adminPassword,
+        role: 'admin',
+        isEmailVerified: true,
+      });
+      console.log(`Admin account created successfully for: ${adminEmail}`);
+    }
+
+    console.log('-------------------------------------------');
+    console.log(`Admin Email: ${adminEmail}`);
+    console.log(`Admin Password: ${adminPassword}`);
+    console.log('-------------------------------------------');
     process.exit(0);
   } catch (error) {
     console.error('Error seeding admin:', error);

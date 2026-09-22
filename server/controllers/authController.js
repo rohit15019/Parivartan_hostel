@@ -32,18 +32,14 @@ const authUser = async (req, res) => {
 
     if (role === 'admin') {
       const cleanEmail = (email || '').trim().toLowerCase();
+      // Only vallabhdharejiya9@gmail.com is authorized as admin
       user = await User.findOne({
         role: 'admin',
         $or: [
           { email: cleanEmail },
-          { email: 'vallabhdharejiya9@gmail.com' },
-          { email: 'vallabhdharejia9@gmail.com' },
-          { email: 'admin@hostel.com' }
+          { email: 'vallabhdharejiya9@gmail.com' }
         ]
       });
-      if (!user) {
-        user = await User.findOne({ role: 'admin' });
-      }
     } else {
       user = await User.findOne({ email: (email || '').trim().toLowerCase() });
       if (!user && role === 'student') {
@@ -316,18 +312,15 @@ const forgotPassword = async (req, res) => {
     const cleanInput = email.trim().toLowerCase();
 
     if (role === 'admin') {
+      const cleanInput = (email || '').trim().toLowerCase();
+      // Only vallabhdharejiya9@gmail.com is authorized as admin
       user = await User.findOne({
         role: 'admin',
         $or: [
           { email: cleanInput },
-          { email: 'vallabhdharejiya9@gmail.com' },
-          { email: 'vallabhdharejia9@gmail.com' },
-          { email: 'admin@hostel.com' }
+          { email: 'vallabhdharejiya9@gmail.com' }
         ]
       });
-      if (!user) {
-        user = await User.findOne({ role: 'admin' });
-      }
     } else {
       user = await User.findOne({ email: cleanInput });
       if (!user) {
