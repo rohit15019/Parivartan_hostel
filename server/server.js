@@ -60,7 +60,7 @@ app.use(
   })
 );
 
-// Global API Rate Limiter (500 requests per 15 mins per IP)
+// Global API Rate Limiter
 const globalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -68,7 +68,7 @@ const globalApiLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Too many requests from this IP. Please slow down.' },
 });
-app.use('/api', globalApiLimiter);
+app.use(['/api', '/auth', '/students', '/fees', '/leaves', '/dashboard', '/rooms', '/reports', '/profile-requests', '/library'], globalApiLimiter);
 
 // Rate Limiter for Auth Routes (Prevents brute-force while allowing normal retries & OTP flows)
 const authLimiter = rateLimit({
@@ -78,24 +78,24 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Too many authentication attempts. Please try again after a few minutes.' },
 });
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/verify-otp', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
-app.use('/api/auth/reset-password', authLimiter);
+app.use(['/api/auth/login', '/auth/login'], authLimiter);
+app.use(['/api/auth/verify-otp', '/auth/verify-otp'], authLimiter);
+app.use(['/api/auth/forgot-password', '/auth/forgot-password'], authLimiter);
+app.use(['/api/auth/reset-password', '/auth/reset-password'], authLimiter);
 
-// Mount API routers
-app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/fees', feeRoutes);
-app.use('/api/leaves', leaveRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/profile-requests', profileRequestRoutes);
-app.use('/api/library', libraryRoutes);
+// Mount API routers supporting both /api/path and /path
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/students', '/students'], studentRoutes);
+app.use(['/api/fees', '/fees'], feeRoutes);
+app.use(['/api/leaves', '/leaves'], leaveRoutes);
+app.use(['/api/dashboard', '/dashboard'], dashboardRoutes);
+app.use(['/api/rooms', '/rooms'], roomRoutes);
+app.use(['/api/reports', '/reports'], reportRoutes);
+app.use(['/api/profile-requests', '/profile-requests'], profileRequestRoutes);
+app.use(['/api/library', '/library'], libraryRoutes);
 
 // Health check endpoint for uptime monitors & load balancers
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -109,9 +109,24 @@ if (process.env.NODE_ENV === 'production') {
   const clientDistPath = path.join(__dirname, '../client/dist');
   app.use(express.static(clientDistPath));
 
+  const apiEndpoints = [
+    '/api',
+    '/auth',
+    '/students',
+    '/fees',
+    '/leaves',
+    '/dashboard',
+    '/rooms',
+    '/reports',
+    '/profile-requests',
+    '/library',
+    '/health'
+  ];
+
   // Serve React Router index.html for all non-API routes
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
+    const isApiRequest = apiEndpoints.some((prefix) => req.path.startsWith(prefix));
+    if (isApiRequest) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
       if (err) next(err);
     });
