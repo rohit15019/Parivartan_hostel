@@ -21,6 +21,37 @@ const maskEmail = (email) => {
   return `${maskedLocal}@${domain}`;
 };
 
+// Helper to ensure admin account always exists
+const ensureAdminUser = async () => {
+  try {
+    const adminEmail = 'vallabhdharejiya9@gmail.com';
+    const adminPassword = 'Admin@123';
+
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(adminPassword, salt);
+      admin = await User.create({
+        email: adminEmail,
+        password: hashedPassword,
+        rawPassword: adminPassword,
+        role: 'admin',
+        isEmailVerified: true,
+      });
+      console.log(`[Auth] Admin account auto-initialized: ${adminEmail}`);
+    } else {
+      if (admin.role !== 'admin') {
+        admin.role = 'admin';
+        await admin.save();
+      }
+    }
+    return admin;
+  } catch (err) {
+    console.error('[Auth] Error in ensureAdminUser:', err.message);
+    return null;
+  }
+};
+
 // @desc    Auth user credentials & Login (Email OTP on first login, direct login on subsequent logins)
 // @route   POST /api/auth/login
 // @access  Public
@@ -28,11 +59,14 @@ const authUser = async (req, res) => {
   const { email, password, role } = req.body;
 
   try {
+    const rawInput = (email || '').trim();
+    const cleanEmail = rawInput.toLowerCase();
+    const cleanPassword = (password || '').trim();
+
     let user = null;
 
-    if (role === 'admin') {
-      const cleanEmail = (email || '').trim().toLowerCase();
-      // Only vallabhdharejiya9@gmail.com is authorized as admin
+    // 1. If admin role requested or admin email typed, ensure & retrieve admin account
+    if (role === 'admin' || cleanEmail === 'vallabhdharejiya9@gmail.com') {
       user = await User.findOne({
         role: 'admin',
         $or: [
@@ -40,11 +74,22 @@ const authUser = async (req, res) => {
           { email: 'vallabhdharejiya9@gmail.com' }
         ]
       });
-    } else {
-      user = await User.findOne({ email: (email || '').trim().toLowerCase() });
-      if (!user && role === 'student') {
+
+      if (!user) {
+        user = await ensureAdminUser();
+      }
+    }
+
+    // 2. If not found, lookup by student email / ID / phone
+    if (!user) {
+      user = await User.findOne({ email: cleanEmail });
+      if (!user) {
         const studentRecord = await Student.findOne({
-          $or: [{ phone: email }, { studentId: email }]
+          $or: [
+            { phone: rawInput },
+            { studentId: rawInput },
+            { studentId: rawInput.toUpperCase() }
+          ]
         });
         if (studentRecord && studentRecord.userId) {
           user = await User.findById(studentRecord.userId);
@@ -53,16 +98,24 @@ const authUser = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials. Account not found.' });
+      return res.status(401).json({ message: 'Invalid credentials. Account not found with this email / student ID.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Check password matching: bcrypt compare with exact / trimmed, or rawPassword safety check
+    let isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch && cleanPassword !== password) {
+      isMatch = await bcrypt.compare(cleanPassword, user.password);
+    }
+    if (!isMatch && user.rawPassword && (user.rawPassword === password || user.rawPassword === cleanPassword)) {
+      isMatch = true;
+      // Rehash password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+      await user.save();
+    }
+
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid password. Please check your credentials.' });
-    }
-
-    if (user.role !== role) {
-      return res.status(401).json({ message: `Access denied. Account is not registered as a ${role}.` });
+      return res.status(401).json({ message: 'Invalid password. Please check your password or use Forgot Password.' });
     }
 
     // Resolve user display name and photo
@@ -572,4 +625,5 @@ module.exports = {
   resetPassword,
   resendResetOtp,
   registerUser,
+  ensureAdminUser,
 };

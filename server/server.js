@@ -138,6 +138,12 @@ mongoose
     const server = app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 
+      // Auto-ensure official admin account exists
+      const { ensureAdminUser } = require('./controllers/authController');
+      ensureAdminUser()
+        .then(() => console.log('[Auto-Admin] Official admin account verified: vallabhdharejiya9@gmail.com'))
+        .catch((err) => console.error('[Auto-Admin Error]', err.message));
+
       // Auto-renew and sync monthly fees for all active students on server start
       const { ensureMonthlyFeesForAllStudents } = require('./controllers/feeController');
       ensureMonthlyFeesForAllStudents()
