@@ -70,13 +70,13 @@ const globalApiLimiter = rateLimit({
 });
 app.use('/api', globalApiLimiter);
 
-// Strict Rate Limiter for Auth Routes (Prevents brute-force on Login / OTP / Forgot Password)
+// Rate Limiter for Auth Routes (Prevents brute-force while allowing normal retries & OTP flows)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // 20 attempts per 15 mins
+  max: 100, // 100 attempts per 15 mins
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many authentication attempts. Please try again after 15 minutes.' },
+  message: { message: 'Too many authentication attempts. Please try again after a few minutes.' },
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/verify-otp', authLimiter);

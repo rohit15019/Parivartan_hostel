@@ -1,16 +1,29 @@
 const nodemailer = require('nodemailer');
 
 const createEmailTransporter = () => {
-  const user = process.env.EMAIL_USER || 'vallabhdharejiya9@gmail.com';
+  const user = (process.env.EMAIL_USER || 'vallabhdharejiya9@gmail.com').trim();
   const pass = (process.env.EMAIL_PASS || 'kqytlsesguipdfut').replace(/\s+/g, '');
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // SSL on port 465 for maximum reliability across cloud VPS providers
     auth: {
       user,
       pass,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
+};
+
+const getSenderAddress = () => {
+  const user = (process.env.EMAIL_USER || 'vallabhdharejiya9@gmail.com').trim();
+  return `"Parivartan Hostel" <${user}>`;
 };
 
 /**
@@ -18,7 +31,7 @@ const createEmailTransporter = () => {
  */
 const sendOtpEmail = async ({ toEmail, userName, otp, expiresInMinutes = 10 }) => {
   const transporter = createEmailTransporter();
-  const senderAddress = process.env.EMAIL_FROM || `"Parivartan Hostel" <${process.env.EMAIL_USER || 'vallabhdharejiya9@gmail.com'}>`;
+  const senderAddress = getSenderAddress();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -179,7 +192,7 @@ const sendOtpEmail = async ({ toEmail, userName, otp, expiresInMinutes = 10 }) =
  */
 const sendPasswordResetEmail = async ({ toEmail, userName, otp, expiresInMinutes = 10 }) => {
   const transporter = createEmailTransporter();
-  const senderAddress = process.env.EMAIL_FROM || `"Parivartan Hostel" <${process.env.EMAIL_USER || 'vallabhdharejiya9@gmail.com'}>`;
+  const senderAddress = getSenderAddress();
 
   const htmlContent = `
     <!DOCTYPE html>

@@ -312,7 +312,6 @@ const forgotPassword = async (req, res) => {
     const cleanInput = email.trim().toLowerCase();
 
     if (role === 'admin') {
-      const cleanInput = (email || '').trim().toLowerCase();
       // Only vallabhdharejiya9@gmail.com is authorized as admin
       user = await User.findOne({
         role: 'admin',
@@ -366,7 +365,8 @@ const forgotPassword = async (req, res) => {
     } catch (emailErr) {
       console.error('[Forgot Password Email Error]', emailErr);
       return res.status(500).json({ 
-        message: 'Failed to send password reset email. Please try again later or contact administration.' 
+        message: 'Failed to send password reset email. Please check your email address or SMTP configuration.',
+        error: emailErr.message 
       });
     }
 
