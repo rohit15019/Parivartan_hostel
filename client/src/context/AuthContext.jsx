@@ -66,7 +66,13 @@ export const AuthProvider = ({ children }) => {
       
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Login failed. Please check your credentials.';
+      if (error.response?.status === 404) {
+        throw 'API server endpoint not found (404). Please ensure Nginx is proxying API requests to the backend server.';
+      }
+      if (error.response?.status === 502 || error.response?.status === 503) {
+        throw 'Backend server is temporarily unreachable (502/503). Please verify the backend service is running with pm2 status.';
+      }
+      throw error.response?.data?.message || error.message || 'Login failed. Please check your credentials.';
     }
   };
 
@@ -83,7 +89,10 @@ export const AuthProvider = ({ children }) => {
       
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Failed to verify code. Please try again.';
+      if (error.response?.status === 404) {
+        throw 'API endpoint not found (404). Please check backend server routing.';
+      }
+      throw error.response?.data?.message || error.message || 'Failed to verify code. Please try again.';
     }
   };
 
@@ -93,7 +102,7 @@ export const AuthProvider = ({ children }) => {
       const { data } = await api.post('/auth/resend-otp', { tempToken });
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Failed to resend verification code.';
+      throw error.response?.data?.message || error.message || 'Failed to resend verification code.';
     }
   };
 
@@ -103,7 +112,10 @@ export const AuthProvider = ({ children }) => {
       const { data } = await api.post('/auth/forgot-password', { email, role });
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Failed to initiate password reset.';
+      if (error.response?.status === 404) {
+        throw 'API endpoint not found (404). Please check backend server routing.';
+      }
+      throw error.response?.data?.message || error.message || 'Failed to initiate password reset.';
     }
   };
 
@@ -113,7 +125,7 @@ export const AuthProvider = ({ children }) => {
       const { data } = await api.post('/auth/reset-password', { tempToken, otp, newPassword });
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Failed to reset password. Please try again.';
+      throw error.response?.data?.message || error.message || 'Failed to reset password. Please try again.';
     }
   };
 
@@ -123,7 +135,7 @@ export const AuthProvider = ({ children }) => {
       const { data } = await api.post('/auth/resend-reset-otp', { tempToken });
       return data;
     } catch (error) {
-      throw error.response?.data?.message || 'Failed to resend reset code.';
+      throw error.response?.data?.message || error.message || 'Failed to resend reset code.';
     }
   };
 
