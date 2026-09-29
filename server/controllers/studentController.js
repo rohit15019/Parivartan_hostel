@@ -390,6 +390,13 @@ const deleteStudent = async (req, res) => {
     await Payment.deleteMany({ studentId: student._id });
     await LeaveRequest.deleteMany({ studentId: student._id });
 
+    // Vacate associated Library Seats
+    const LibrarySeat = require('../models/LibrarySeat');
+    await LibrarySeat.updateMany(
+      { studentId: student._id },
+      { $set: { studentId: null, assignedDate: null, notes: '' } }
+    );
+
     // Delete Student
     await Student.findByIdAndDelete(req.params.id);
 
