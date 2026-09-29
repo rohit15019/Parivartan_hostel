@@ -288,7 +288,16 @@ const updateStudent = async (req, res) => {
     if (college !== undefined) student.college = college;
     if (course !== undefined) student.course = course;
     if (year !== undefined) student.year = year;
-    if (status !== undefined) student.status = status;
+    if (status !== undefined) {
+      student.status = status;
+      if (status === 'Left') {
+        const LibrarySeat = require('../models/LibrarySeat');
+        await LibrarySeat.updateMany(
+          { studentId: student._id },
+          { $set: { studentId: null, assignedDate: null, notes: '' } }
+        );
+      }
+    }
     if (deposit !== undefined) {
       if (deposit === null || deposit === '' || isNaN(Number(deposit)) || Number(deposit) < 0) {
         return res.status(400).json({ message: 'Deposit amount is required and must be 0 or greater' });
