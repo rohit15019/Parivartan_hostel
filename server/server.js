@@ -127,7 +127,7 @@ if (process.env.NODE_ENV === 'production') {
   ];
 
   // Serve React Router index.html for all non-API routes
-  app.get('*', (req, res, next) => {
+  app.get(/(.*)/, (req, res, next) => {
     const isApiRequest = apiEndpoints.some((prefix) => req.path.startsWith(prefix));
     if (isApiRequest) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
