@@ -26,11 +26,13 @@ const app = express();
 // Trust proxy for reverse proxies (Nginx on VPS)
 app.set('trust proxy', 1);
 
-// Security HTTP Headers
+// Security HTTP Headers (configured for cross-origin and IP compatibility)
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Allows flexible CDN & image loading
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    originAgentCluster: false,
   })
 );
 
@@ -94,12 +96,13 @@ app.use(['/api/reports', '/reports'], reportRoutes);
 app.use(['/api/profile-requests', '/profile-requests'], profileRequestRoutes);
 app.use(['/api/library', '/library'], libraryRoutes);
 
-// Health check endpoint for uptime monitors & load balancers
-app.get(['/api/health', '/health'], (req, res) => {
+// Root & Health check endpoint for uptime monitors & API verification
+app.get(['/', '/api', '/api/health', '/health'], (req, res) => {
   res.status(200).json({
     status: 'healthy',
+    message: 'Parivartan Hostel Management API is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: `${Math.floor(process.uptime())}s`,
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
