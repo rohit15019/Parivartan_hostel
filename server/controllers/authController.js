@@ -74,19 +74,21 @@ const authUser = async (req, res) => {
 
     let user = null;
 
-    // 1. If admin role requested or admin email typed, ensure & retrieve admin account
-    if (role === 'admin' || cleanEmail === 'vallabhdharejiya9@gmail.com') {
+    // 1. If admin role requested, strictly enforce the admin email
+    if (role === 'admin') {
+      if (cleanEmail !== 'vallabhdharejiya9@gmail.com') {
+        return res.status(401).json({ message: 'Invalid credentials. Only authorized email can login as Admin.' });
+      }
       user = await User.findOne({
         role: 'admin',
-        $or: [
-          { email: cleanEmail },
-          { email: 'vallabhdharejiya9@gmail.com' }
-        ]
+        email: 'vallabhdharejiya9@gmail.com'
       });
 
       if (!user) {
         user = await ensureAdminUser();
       }
+    } else if (cleanEmail === 'vallabhdharejiya9@gmail.com') {
+      return res.status(401).json({ message: 'Please select Admin role to login with this email.' });
     }
 
     // 2. If not found, lookup by student email / ID / phone
@@ -384,12 +386,12 @@ const forgotPassword = async (req, res) => {
 
     if (role === 'admin') {
       // Only vallabhdharejiya9@gmail.com is authorized as admin
+      if (cleanInput !== 'vallabhdharejiya9@gmail.com') {
+        return res.status(401).json({ message: 'Invalid credentials. Only authorized email can reset Admin password.' });
+      }
       user = await User.findOne({
         role: 'admin',
-        $or: [
-          { email: cleanInput },
-          { email: 'vallabhdharejiya9@gmail.com' }
-        ]
+        email: 'vallabhdharejiya9@gmail.com'
       });
     } else {
       user = await User.findOne({ email: cleanInput });
