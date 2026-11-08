@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, changeStudentPassword, deleteStudent } = require('../controllers/studentController');
+const { 
+  getStudents, 
+  getStudentProfile, 
+  uploadStudentPhoto, 
+  createStudent, 
+  updateStudent, 
+  changeStudentPassword, 
+  deleteStudent,
+  toggleStudentDeactivation 
+} = require('../controllers/studentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/profile')
@@ -19,5 +28,8 @@ router.route('/:id')
 
 router.route('/:id/password')
   .put(protect, admin, changeStudentPassword);
+
+router.route('/:id/deactivate')
+  .put(protect, admin, toggleStudentDeactivation);
 
 module.exports = router;

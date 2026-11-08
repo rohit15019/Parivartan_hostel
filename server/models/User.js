@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
   },
+  isDeactivated: {
+    type: Boolean,
+    default: false,
+  },
   // Email OTP Verification fields
   isEmailVerified: {
     type: Boolean,

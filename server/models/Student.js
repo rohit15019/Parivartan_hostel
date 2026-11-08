@@ -29,6 +29,7 @@ const studentSchema = new mongoose.Schema({
   feeDueDay: { type: Number, default: 10 },
   joiningDate: { type: Date, default: Date.now },
   status: { type: String, enum: ['Active', 'Away', 'Left'], default: 'Active' },
+  isDeactivated: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Student', studentSchema);

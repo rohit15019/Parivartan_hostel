@@ -24,16 +24,22 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle 401 Unauthorized
+// Add a response interceptor to handle 401 Unauthorized & Deactivated accounts
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear expired credentials
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+    if (error.response) {
+      const isDeactivated = error.response.status === 403 && 
+        typeof error.response.data?.message === 'string' && 
+        error.response.data.message.toLowerCase().includes('deactivated');
+
+      if (error.response.status === 401 || isDeactivated) {
+        // Clear expired or deactivated credentials
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

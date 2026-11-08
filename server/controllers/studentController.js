@@ -12,7 +12,7 @@ const getStudents = async (req, res) => {
   try {
     const students = await Student.find({}).populate({
       path: 'userId',
-      select: 'email role rawPassword'
+      select: 'email role rawPassword isDeactivated'
     });
     
     // Attach fee info
@@ -225,7 +225,7 @@ const updateStudent = async (req, res) => {
 
     const {
       email, password, newPassword, surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status,
-      deposit, monthlyFee, feeDueDay
+      deposit, monthlyFee, feeDueDay, isDeactivated
     } = req.body;
 
     // Handle email & password updates on associated User model
@@ -311,6 +311,12 @@ const updateStudent = async (req, res) => {
       student.monthlyFee = Number(monthlyFee);
     }
     if (feeDueDay !== undefined) student.feeDueDay = Math.min(28, Math.max(1, Number(feeDueDay)));
+    if (isDeactivated !== undefined) {
+      student.isDeactivated = Boolean(isDeactivated);
+      if (student.userId) {
+        await User.findByIdAndUpdate(student.userId, { isDeactivated: student.isDeactivated });
+      }
+    }
 
     await student.save();
 
@@ -319,7 +325,7 @@ const updateStudent = async (req, res) => {
 
     const updatedPopulated = await Student.findById(student._id).populate({
       path: 'userId',
-      select: 'email role rawPassword'
+      select: 'email role rawPassword isDeactivated'
     });
 
     const fee = await Fee.findOne({ studentId: student._id });
@@ -415,4 +421,53 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-module.exports = { getStudents, getStudentProfile, uploadStudentPhoto, createStudent, updateStudent, changeStudentPassword, deleteStudent };
+// @desc    Toggle student active / deactivated status
+// @route   PUT /api/students/:id/deactivate
+// @access  Private/Admin
+const toggleStudentDeactivation = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const newStatus = typeof req.body.isDeactivated === 'boolean'
+      ? req.body.isDeactivated
+      : !student.isDeactivated;
+
+    student.isDeactivated = newStatus;
+    await student.save();
+
+    if (student.userId) {
+      await User.findByIdAndUpdate(student.userId, { isDeactivated: newStatus });
+    }
+
+    const updatedPopulated = await Student.findById(student._id).populate({
+      path: 'userId',
+      select: 'email role rawPassword isDeactivated'
+    });
+    const fee = await Fee.findOne({ studentId: student._id });
+
+    res.json({
+      message: `Student successfully ${newStatus ? 'deactivated' : 'activated'}`,
+      isDeactivated: newStatus,
+      student: {
+        ...updatedPopulated._doc,
+        fee: fee || null
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { 
+  getStudents, 
+  getStudentProfile, 
+  uploadStudentPhoto, 
+  createStudent, 
+  updateStudent, 
+  changeStudentPassword, 
+  deleteStudent,
+  toggleStudentDeactivation
+};

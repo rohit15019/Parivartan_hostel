@@ -112,6 +112,23 @@ const authUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials. Account not found with this email / student ID.' });
     }
 
+    // Check if student account is deactivated
+    if (user.role === 'student') {
+      let studentRecord = null;
+      if (user.studentId) {
+        studentRecord = await Student.findById(user.studentId);
+      }
+      if (!studentRecord) {
+        studentRecord = await Student.findOne({ userId: user._id });
+      }
+
+      if (user.isDeactivated || (studentRecord && studentRecord.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
+    }
+
     // Check password matching: bcrypt compare with exact / trimmed, or rawPassword safety check
     let isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch && cleanPassword !== password) {
@@ -243,6 +260,15 @@ const verifyLoginOtp = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    if (user.role === 'student') {
+      const studentRecord = user.studentId ? await Student.findById(user.studentId) : await Student.findOne({ userId: user._id });
+      if (user.isDeactivated || (studentRecord && studentRecord.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
+    }
+
     if (!user.loginOtp || !user.loginOtpExpires) {
       return res.status(400).json({ message: 'No active verification code found. Please sign in again.' });
     }
@@ -337,6 +363,15 @@ const resendLoginOtp = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    if (user.role === 'student') {
+      const studentRecord = user.studentId ? await Student.findById(user.studentId) : await Student.findOne({ userId: user._id });
+      if (user.isDeactivated || (studentRecord && studentRecord.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
+    }
+
     let displayName = user.email.split('@')[0];
     if (user.role === 'student') {
       const student = await Student.findOne({ userId: user._id });
@@ -407,6 +442,16 @@ const forgotPassword = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: 'No registered account found with these details.' });
+    }
+
+    // Check if student account is deactivated
+    if (user.role === 'student') {
+      const student = user.studentId ? await Student.findById(user.studentId) : await Student.findOne({ userId: user._id });
+      if (user.isDeactivated || (student && student.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
     }
 
     // Resolve user display name
@@ -492,6 +537,15 @@ const resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    if (user.role === 'student') {
+      const studentRecord = user.studentId ? await Student.findById(user.studentId) : await Student.findOne({ userId: user._id });
+      if (user.isDeactivated || (studentRecord && studentRecord.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
+    }
+
     if (!user.resetPasswordOtp || !user.resetPasswordExpires) {
       return res.status(400).json({ message: 'No active password reset request found. Please request a new code.' });
     }
@@ -563,6 +617,15 @@ const resendResetOtp = async (req, res) => {
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (user.role === 'student') {
+      const studentRecord = user.studentId ? await Student.findById(user.studentId) : await Student.findOne({ userId: user._id });
+      if (user.isDeactivated || (studentRecord && studentRecord.isDeactivated)) {
+        return res.status(403).json({
+          message: 'Your account has been deactivated. Please contact the hostel administrator.'
+        });
+      }
     }
 
     let displayName = user.email.split('@')[0];

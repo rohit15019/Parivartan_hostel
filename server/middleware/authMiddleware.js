@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Student = require('../models/Student');
 
 const protect = async (req, res, next) => {
   let token;
@@ -8,15 +9,31 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
       req.user = await User.findById(decoded.id).select('-password');
-      next();
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
+      // Check if student account is deactivated
+      if (req.user.role === 'student') {
+        const student = req.user.studentId 
+          ? await Student.findById(req.user.studentId) 
+          : await Student.findOne({ userId: req.user._id });
+        if (req.user.isDeactivated || (student && student.isDeactivated)) {
+          return res.status(403).json({
+            message: 'Your account has been deactivated. Please contact the hostel administrator.'
+          });
+        }
+      }
+
+      return next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 

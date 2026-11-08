@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, FileEdit, IndianRupee, X, Trash2, 
   Key, Eye, EyeOff, Copy, Check, User, Phone, MapPin, 
-  Calendar, School, Home, Lock
+  Calendar, School, Home, Lock, UserX, UserCheck
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
@@ -86,12 +86,76 @@ const StudentsList = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, isDeactivated = false) => {
+    if (isDeactivated) {
+      return <Badge variant="danger" className="bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800">🚫 Deactivated</Badge>;
+    }
     switch (status) {
       case 'Active': return <Badge variant="success">🟢 Active</Badge>;
       case 'Away': return <Badge variant="warning">🟡 Away</Badge>;
       case 'Left': return <Badge variant="danger">🔴 Left</Badge>;
       default: return <Badge variant="success">{status || 'Active'}</Badge>;
+    }
+  };
+
+  const handleToggleDeactivate = async (student) => {
+    const studentId = student._id || student.id;
+    const isCurrentlyDeactivated = Boolean(student.isDeactivated);
+    const actionLabel = isCurrentlyDeactivated ? 'Activate' : 'Deactivate';
+
+    const confirmMessage = isCurrentlyDeactivated
+      ? `Activate Student: ${student.name}?\n\nThe student will be granted access to log in to their student portal again.`
+      : `Deactivate Student: ${student.name}?\n\nThe student will remain visible in the admin panel, but will be BLOCKED from logging in to their student portal until reactivated.`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const { data } = await api.put(`/students/${studentId}/deactivate`, {
+        isDeactivated: !isCurrentlyDeactivated
+      });
+
+      const nextStatus = !isCurrentlyDeactivated;
+
+      setStudents(prev => prev.map(s => {
+        if ((s._id || s.id) === studentId) {
+          return {
+            ...s,
+            ...(data.student || {}),
+            isDeactivated: nextStatus,
+            userId: {
+              ...(s.userId || {}),
+              isDeactivated: nextStatus
+            }
+          };
+        }
+        return s;
+      }));
+
+      if (viewingProfileStudent && (viewingProfileStudent._id || viewingProfileStudent.id) === studentId) {
+        setViewingProfileStudent(prev => ({
+          ...prev,
+          ...(data.student || {}),
+          isDeactivated: nextStatus,
+          userId: {
+            ...(prev.userId || {}),
+            isDeactivated: nextStatus
+          }
+        }));
+      }
+
+      if (editingStudent && (editingStudent._id || editingStudent.id) === studentId) {
+        setEditingStudent(prev => ({
+          ...prev,
+          ...(data.student || {}),
+          isDeactivated: nextStatus
+        }));
+      }
+
+      alert(data.message || `Student ${actionLabel}d successfully!`);
+    } catch (error) {
+      alert(error.response?.data?.message || `Failed to ${actionLabel.toLowerCase()} student`);
     }
   };
 
@@ -321,7 +385,8 @@ const StudentsList = () => {
         deposit: Number(editingStudent.deposit),
         monthlyFee: Number(editingStudent.monthlyFee),
         feeDueDay: Number(editingStudent.feeDueDay) || 10,
-        roomNumber: editingStudent.room || editingStudent.roomNumber
+        roomNumber: editingStudent.room || editingStudent.roomNumber,
+        isDeactivated: Boolean(editingStudent.isDeactivated)
       });
       
       // Update local state
@@ -389,7 +454,8 @@ const StudentsList = () => {
       college: student.college || '',
       deposit: student.deposit !== undefined && student.deposit !== null ? student.deposit : '',
       monthlyFee: student.monthlyFee || 6000,
-      feeDueDay: student.feeDueDay || 10
+      feeDueDay: student.feeDueDay || 10,
+      isDeactivated: Boolean(student.isDeactivated)
     });
     setEditActiveTab(defaultTab);
     setEditNewPassword('');
@@ -507,6 +573,11 @@ const StudentsList = () => {
                       <div>
                         <div className="font-semibold group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors flex items-center gap-1.5">
                           <span>{student.surname ? `${student.surname} ${student.name}` : student.name}</span>
+                          {student.isDeactivated && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                              Deactivated
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-black/50 dark:text-white/50">{student.studentId}</div>
                       </div>
@@ -556,6 +627,19 @@ const StudentsList = () => {
                         onClick={() => openEditModal(student, 'details')}
                       >
                         <FileEdit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`h-8 w-8 ${
+                          student.isDeactivated 
+                            ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' 
+                            : 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                        }`} 
+                        title={student.isDeactivated ? "Activate Student (Allow Portal Login)" : "Deactivate Student (Block Portal Login)"}
+                        onClick={() => handleToggleDeactivate(student)}
+                      >
+                        {student.isDeactivated ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -629,7 +713,7 @@ const StudentsList = () => {
                         {viewingProfileStudent.name}
                         {viewingProfileStudent.fatherName ? ` ${viewingProfileStudent.fatherName}` : ''}
                       </h2>
-                      {getStatusBadge(viewingProfileStudent.status)}
+                      {getStatusBadge(viewingProfileStudent.status, viewingProfileStudent.isDeactivated)}
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-xs text-white/80 font-medium">
@@ -669,7 +753,7 @@ const StudentsList = () => {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                     <div className="p-3 rounded-xl bg-card border border-border shadow-2xs space-y-1">
                       <span className="text-[11px] text-black/50 dark:text-white/50 font-medium block">Login Username / ID</span>
                       <div className="font-mono text-xs sm:text-sm font-bold text-foreground truncate">
@@ -710,6 +794,21 @@ const StudentsList = () => {
                             {copiedPassword ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-card border border-border shadow-2xs space-y-1">
+                      <span className="text-[11px] text-black/50 dark:text-white/50 font-medium block">Portal Login Status</span>
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        {viewingProfileStudent.isDeactivated ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400">
+                            <UserX className="w-3.5 h-3.5" /> Deactivated
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <UserCheck className="w-3.5 h-3.5" /> Active (Can Login)
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -850,7 +949,29 @@ const StudentsList = () => {
                   <IndianRupee className="w-4 h-4" /> View Fee Ledger
                 </Button>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`gap-1.5 font-semibold ${
+                      viewingProfileStudent.isDeactivated
+                        ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40'
+                        : 'border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/40'
+                    }`}
+                    onClick={() => handleToggleDeactivate(viewingProfileStudent)}
+                  >
+                    {viewingProfileStudent.isDeactivated ? (
+                      <>
+                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                        <span>Activate Student</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserX className="w-4 h-4 text-rose-600" />
+                        <span>Deactivate Student</span>
+                      </>
+                    )}
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1270,6 +1391,22 @@ const StudentsList = () => {
                           value={editingStudent.monthlyFee} 
                           onChange={(e) => setEditingStudent({...editingStudent, monthlyFee: e.target.value})} 
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="edit_deactivated" className="text-sm font-medium">Student Portal Login Access</label>
+                        <select
+                          id="edit_deactivated"
+                          name="edit_deactivated"
+                          value={editingStudent.isDeactivated ? 'deactivated' : 'active'}
+                          onChange={(e) => setEditingStudent({
+                            ...editingStudent,
+                            isDeactivated: e.target.value === 'deactivated'
+                          })}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="active">🟢 Active (Student can log in to portal)</option>
+                          <option value="deactivated">🚫 Deactivated (Student cannot log in to portal)</option>
+                        </select>
                       </div>
                     </div>
                     <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-border pt-6">
