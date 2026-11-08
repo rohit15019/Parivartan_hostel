@@ -25,6 +25,7 @@ const studentSchema = new mongoose.Schema({
   year: { type: String },
   roomNumber: { type: String },
   deposit: { type: Number, required: [true, 'Deposit amount is required'], min: 0 },
+  depositNote: { type: String, default: '' },
   monthlyFee: { type: Number, required: [true, 'Monthly fee rate is required'], min: 1 },
   feeDueDay: { type: Number, default: 10 },
   joiningDate: { type: Date, default: Date.now },

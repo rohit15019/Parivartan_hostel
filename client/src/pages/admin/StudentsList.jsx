@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, FileEdit, IndianRupee, X, Trash2, 
   Key, Eye, EyeOff, Copy, Check, User, Phone, MapPin, 
-  Calendar, School, Home, Lock, UserX, UserCheck
+  Calendar, School, Home, Lock, UserX, UserCheck, FileText
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
@@ -42,6 +42,7 @@ const StudentsList = () => {
     dob: '', village: '', taluka: '', district: '', 
     pincode: '', school: '', college: '', room: '',
     deposit: '',
+    depositNote: '',
     monthlyFee: '',
     feeDueDay: 10
   };
@@ -156,6 +157,51 @@ const StudentsList = () => {
       alert(data.message || `Student ${actionLabel}d successfully!`);
     } catch (error) {
       alert(error.response?.data?.message || `Failed to ${actionLabel.toLowerCase()} student`);
+    }
+  };
+
+  const handleUpdateDepositNote = async (student) => {
+    const studentId = student._id || student.id;
+    const currentNote = student.depositNote || '';
+    const newNote = window.prompt(`Enter or update deposit note for ${student.name}:`, currentNote);
+    if (newNote === null) return; // cancelled
+
+    try {
+      const { data } = await api.put(`/students/${studentId}`, {
+        depositNote: newNote.trim()
+      });
+
+      const updatedNote = newNote.trim();
+
+      setStudents(prev => prev.map(s => {
+        if ((s._id || s.id) === studentId) {
+          return {
+            ...s,
+            ...(data || {}),
+            depositNote: updatedNote
+          };
+        }
+        return s;
+      }));
+
+      if (viewingProfileStudent && (viewingProfileStudent._id || viewingProfileStudent.id) === studentId) {
+        setViewingProfileStudent(prev => ({
+          ...prev,
+          ...(data || {}),
+          depositNote: updatedNote
+        }));
+      }
+
+      if (editingStudent && (editingStudent._id || editingStudent.id) === studentId) {
+        setEditingStudent(prev => ({
+          ...prev,
+          depositNote: updatedNote
+        }));
+      }
+
+      alert('Deposit note updated successfully!');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update deposit note');
     }
   };
 
@@ -323,6 +369,7 @@ const StudentsList = () => {
       const studentData = {
         ...newStudent,
         deposit: Number(newStudent.deposit),
+        depositNote: (newStudent.depositNote || '').trim(),
         roomNumber: newStudent.room,
         course: '',
         year: '1st Year',
@@ -383,6 +430,7 @@ const StudentsList = () => {
         school: editingStudent.school,
         college: editingStudent.college,
         deposit: Number(editingStudent.deposit),
+        depositNote: (editingStudent.depositNote || '').trim(),
         monthlyFee: Number(editingStudent.monthlyFee),
         feeDueDay: Number(editingStudent.feeDueDay) || 10,
         roomNumber: editingStudent.room || editingStudent.roomNumber,
@@ -453,6 +501,7 @@ const StudentsList = () => {
       school: student.school || '',
       college: student.college || '',
       deposit: student.deposit !== undefined && student.deposit !== null ? student.deposit : '',
+      depositNote: student.depositNote || '',
       monthlyFee: student.monthlyFee || 6000,
       feeDueDay: student.feeDueDay || 10,
       isDeactivated: Boolean(student.isDeactivated)
@@ -588,9 +637,34 @@ const StudentsList = () => {
                     <div className="text-xs text-black/50 dark:text-white/50">{student.phone}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      ₹{Number(student.deposit || 0).toLocaleString()}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ₹{Number(student.deposit || 0).toLocaleString()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpdateDepositNote(student);
+                        }}
+                        className="text-black/40 hover:text-primary-600 dark:text-white/40 dark:hover:text-primary-400 p-0.5 rounded transition-colors"
+                        title={student.depositNote ? `Deposit Note: "${student.depositNote}" (Click to edit)` : "Add Deposit Note"}
+                      >
+                        <FileText className={`w-3.5 h-3.5 ${student.depositNote ? 'text-amber-500 fill-amber-500/20' : ''}`} />
+                      </button>
+                    </div>
+                    {student.depositNote && (
+                      <div 
+                        className="text-[11px] text-amber-700 dark:text-amber-300 font-medium truncate max-w-[160px] mt-0.5 cursor-pointer hover:underline flex items-center gap-1" 
+                        title={`Deposit Note: ${student.depositNote} (Click to edit)`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpdateDepositNote(student);
+                        }}
+                      >
+                        <span className="truncate">{student.depositNote}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 min-w-[200px]">
                     <div className="flex justify-between text-xs mb-1">
@@ -910,11 +984,31 @@ const StudentsList = () => {
                         <span className="text-black/50 dark:text-white/50">Room Assigned:</span>
                         <span className="font-semibold text-foreground">Room {viewingProfileStudent.roomNumber || viewingProfileStudent.room || 'N/A'}</span>
                       </div>
-                      <div className="flex justify-between pt-2">
+                      <div className="flex justify-between items-start pt-2">
                         <span className="text-black/50 dark:text-white/50">Security Deposit Paid:</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          ₹{Number(viewingProfileStudent.deposit || 0).toLocaleString()}
-                        </span>
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                              ₹{Number(viewingProfileStudent.deposit || 0).toLocaleString()}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateDepositNote(viewingProfileStudent)}
+                              className="text-primary-600 hover:text-primary-700 dark:text-primary-400 p-0.5 rounded hover:bg-primary-50 dark:hover:bg-primary-950/40 text-[11px] font-semibold inline-flex items-center gap-1 transition-colors"
+                              title="Add or Edit Deposit Note"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>{viewingProfileStudent.depositNote ? 'Edit Note' : 'Add Note'}</span>
+                            </button>
+                          </div>
+                          {viewingProfileStudent.depositNote ? (
+                            <div className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/50 rounded-md px-2 py-1 mt-1 font-medium text-left max-w-[240px] break-words">
+                              <span className="font-bold">Note: </span>{viewingProfileStudent.depositNote}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-black/40 dark:text-white/40 block mt-0.5">No note</span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-between pt-2">
                         <span className="text-black/50 dark:text-white/50">Monthly Fee Rate:</span>
@@ -1217,6 +1311,16 @@ const StudentsList = () => {
                         onChange={(e) => setNewStudent({...newStudent, monthlyFee: e.target.value})} 
                       />
                     </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label htmlFor="add_depositNote" className="text-sm font-medium">Deposit Note / Remarks (Optional)</label>
+                      <Input 
+                        name="add_depositNote" 
+                        id="add_depositNote" 
+                        placeholder="e.g. Paid via UPI ref 12345 / Cheque #9876 / Cash receipt / Refundable" 
+                        value={newStudent.depositNote || ''} 
+                        onChange={(e) => setNewStudent({...newStudent, depositNote: e.target.value})} 
+                      />
+                    </div>
                   </div>
                   <div className="pt-4 flex justify-end gap-3 mt-4">
                     <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
@@ -1407,6 +1511,16 @@ const StudentsList = () => {
                           <option value="active">🟢 Active (Student can log in to portal)</option>
                           <option value="deactivated">🚫 Deactivated (Student cannot log in to portal)</option>
                         </select>
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label htmlFor="edit_depositNote" className="text-sm font-medium">Deposit Note / Remarks</label>
+                        <Input 
+                          name="edit_depositNote" 
+                          id="edit_depositNote" 
+                          placeholder="e.g. Paid via UPI ref 12345 / Cheque #9876 / Cash receipt / Refundable" 
+                          value={editingStudent.depositNote || ''} 
+                          onChange={(e) => setEditingStudent({...editingStudent, depositNote: e.target.value})} 
+                        />
                       </div>
                     </div>
                     <div className="pt-4 flex justify-end gap-3 mt-4 border-t border-border pt-6">

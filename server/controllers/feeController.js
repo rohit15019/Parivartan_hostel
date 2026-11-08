@@ -376,7 +376,7 @@ const getAllStudentFees = async (req, res) => {
     await ensureMonthlyFeesForAllStudents();
 
     const students = await Student.find({ status: { $ne: 'Left' } })
-      .select('studentId name surname fatherName phone roomNumber course year status deposit monthlyFee feeDueDay photo');
+      .select('studentId name surname fatherName phone roomNumber course year status deposit depositNote monthlyFee feeDueDay photo');
 
     const now = new Date();
     const currentYear = now.getFullYear();

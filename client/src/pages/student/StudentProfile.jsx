@@ -297,9 +297,16 @@ const StudentProfile = () => {
                   <span className="text-black/50 dark:text-white/50 flex items-center gap-2 shrink-0">
                     <IndianRupee className="w-4 h-4 text-emerald-500" /> Deposit Paid:
                   </span>
-                  <span className="font-bold px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-md truncate max-w-[140px]" title={`₹${Number(profile.deposit || 0).toLocaleString()}`}>
-                    ₹{Number(profile.deposit || 0).toLocaleString()}
-                  </span>
+                  <div className="text-right">
+                    <span className="font-bold px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-md truncate inline-block max-w-[140px]" title={`₹${Number(profile.deposit || 0).toLocaleString()}`}>
+                      ₹{Number(profile.deposit || 0).toLocaleString()}
+                    </span>
+                    {profile.depositNote && (
+                      <span className="text-[11px] text-black/50 dark:text-white/50 block truncate max-w-[140px] mt-0.5" title={profile.depositNote}>
+                        {profile.depositNote}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-sm gap-2">
                   <span className="text-black/50 dark:text-white/50 flex items-center gap-2 shrink-0">
@@ -491,6 +498,11 @@ const StudentProfile = () => {
                   <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate block" title={`₹${Number(profile.deposit || 0).toLocaleString()}`}>
                     ₹{Number(profile.deposit || 0).toLocaleString()}
                   </span>
+                  {profile.depositNote && (
+                    <span className="text-[11px] text-black/50 dark:text-white/50 block truncate mt-0.5" title={profile.depositNote}>
+                      {profile.depositNote}
+                    </span>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -83,7 +83,7 @@ const createStudent = async (req, res) => {
     fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school,
     college, course, year, roomNumber,
     totalFees, paymentFrequency, dueDate,
-    deposit, monthlyFee, feeDueDay
+    deposit, depositNote, monthlyFee, feeDueDay
   } = req.body;
 
   let createdUser = null;
@@ -188,6 +188,7 @@ const createStudent = async (req, res) => {
       year: year || '1st Year',
       roomNumber,
       deposit: Number(deposit),
+      depositNote: depositNote ? depositNote.trim() : '',
       monthlyFee: Number(monthlyFee),
       feeDueDay: Number(feeDueDay) || 10
     });
@@ -225,7 +226,7 @@ const updateStudent = async (req, res) => {
 
     const {
       email, password, newPassword, surname, name, phone, fatherName, fatherPhone, motherPhone, dob, village, taluka, district, pincode, school, college, course, year, roomNumber, status,
-      deposit, monthlyFee, feeDueDay, isDeactivated
+      deposit, depositNote, monthlyFee, feeDueDay, isDeactivated
     } = req.body;
 
     // Handle email & password updates on associated User model
@@ -303,6 +304,9 @@ const updateStudent = async (req, res) => {
         return res.status(400).json({ message: 'Deposit amount is required and must be 0 or greater' });
       }
       student.deposit = Number(deposit);
+    }
+    if (depositNote !== undefined) {
+      student.depositNote = depositNote ? depositNote.trim() : '';
     }
     if (monthlyFee !== undefined) {
       if (monthlyFee === null || monthlyFee === '' || isNaN(Number(monthlyFee)) || Number(monthlyFee) <= 0) {
